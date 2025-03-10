@@ -287,18 +287,30 @@ void multiply_n( int *x_in, int *y_in, const int n_samples, int *output )
 void add_n( int *x_in, int *y_in, const int n_samples, int *output )
 {
     int i = 0;
+    FILE *fp1 = fopen("../test/add/a.txt", "w");
+    FILE *fp2 = fopen("../test/add/b.txt", "w");
+    FILE *fp3 = fopen("../test/add/cmp.txt", "w");
     for ( i = 0; i < n_samples; i++ )
     {
+        fprintf(fp1, "%d\n", x_in[i]);
+        fprintf(fp2, "%d\n", y_in[i]);
         output[i] = x_in[i] + y_in[i];
+        fprintf(fp3, "%d\n", output[i]);
     }
 }
 
 void sub_n( int *x_in, int *y_in, const int n_samples, int *output )
 {
     int i = 0;
+    FILE *fp1 = fopen("../test/sub/a.txt", "w");
+    FILE *fp2 = fopen("../test/sub/b.txt", "w");
+    FILE *fp3 = fopen("../test/sub/cmp.txt", "w");
     for ( i = 0; i < n_samples; i++ )
     {
+        fprintf(fp1, "%d\n", x_in[i]);
+        fprintf(fp2, "%d\n", y_in[i]);
         output[i] = x_in[i] - y_in[i];
+        fprintf(fp3, "%d\n", output[i]);
     }
 }
 
