@@ -7,4 +7,8 @@ package GLOBALS;
     function int DEQUANTIZE_I(int i);
         return i / QUANT_VAL;
     endfunction
+    function automatic int QUANTIZE_F(input real f);
+        return int'(f * QUANT_VAL);
+    endfunction
+    localparam VOLUME_LEVEL = QUANTIZE_F(1.0);
 endpackage

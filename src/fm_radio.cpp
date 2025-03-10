@@ -323,9 +323,13 @@ void sub_n( int *x_in, int *y_in, const int n_samples, int *output )
 void gain_n( int *input, const int n_samples, int gain, int *output )
 {
     int i = 0;
+    FILE *fp1 = fopen("../test/gain/a.txt", "w");
+    FILE *fp2 = fopen("../test/gain/cmp.txt", "w");
     for ( i = 0; i < n_samples; i++ )
     {
+        fprintf(fp1, "%d\n", input[i]);
         output[i] = DEQUANTIZE(input[i] * gain) << (14-BITS);
+        fprintf(fp2, "%d\n", output[i]);
     }
 }
 
