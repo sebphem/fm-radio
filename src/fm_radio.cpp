@@ -277,9 +277,15 @@ void fir_cmplx( int *x_real_in, int *x_imag_in, const int *h_real, const int *h_
 void multiply_n( int *x_in, int *y_in, const int n_samples, int *output )
 {
     int i = 0;
+    FILE *fp1 = fopen("../test/multiply/a.txt", "w");
+    FILE *fp2 = fopen("../test/multiply/b.txt", "w");
+    FILE *fp3 = fopen("../test/multiply/cmp.txt", "w");
     for ( i = 0; i < n_samples; i++ )
     {
+        fprintf(fp1, "%d\n", x_in[i]);
+        fprintf(fp2, "%d\n", y_in[i]);
         output[i] = DEQUANTIZE( x_in[i] * y_in[i] );
+        fprintf(fp3, "%d\n", output[i]);
     }
 }
 

@@ -45,7 +45,7 @@ module multiply_two_inputs (
                inA_rd_en = 1'b1;
                inB_rd_en = 1'b1;
 
-               multiply_c = DEQUANTIZE_I(inA_dout * inB_dout);
+               multiply_c = GLOBALS::DEQUANTIZE_I(inA_dout * inB_dout);
 
                state_c = S1;
             end
