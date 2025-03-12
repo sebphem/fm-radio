@@ -11,4 +11,10 @@ package GLOBALS;
         return int'(f * QUANT_VAL);
     endfunction
     localparam VOLUME_LEVEL = QUANTIZE_F(1.0);
+    localparam ADUIO_DECIM = 8;
+    localparam SAMPLES = 65536*4;
+    localparam AUDIO_SAMPLES = SAMPLES/ADUIO_DECIM;
+    localparam MAX_TAPS = 32;
+    localparam IIR_COEFF_TAPS = 2;
+    localparam IIR_COEFF_TAP_BITS = 1;
 endpackage
