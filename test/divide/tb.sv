@@ -152,7 +152,7 @@ initial begin : tb_process
 end
 
 initial begin : img_read_process
-    int i, r;
+    int i, r, j;
     int a_file, b_file;
 
     @(negedge reset);
@@ -169,7 +169,7 @@ initial begin : img_read_process
         $display("Error: Could not open file %s", B_IN);
         $finish;
     end
-
+    
     // Read A and B line by line until EOF (1 integer each line)
     // and write to the FIFOs
     while (!$feof(a_file) && !$feof(b_file)) begin
@@ -187,6 +187,9 @@ initial begin : img_read_process
         @(posedge clock);
         a_in_wr_en = 1'b0;
         b_in_wr_en = 1'b0;
+        for(j=0; j<32; j=j+1) begin
+            @(posedge clock);
+        end
     end
 
     @(negedge clock);

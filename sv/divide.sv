@@ -2,44 +2,144 @@ module divide_two_inputs (
     input  logic                    clock,
     input  logic                    reset,
 
-    // Dividend input port
+    // Input FIFO interface
     output logic                    inA_rd_en,      
     input  logic                    inA_empty,      
-    input  logic signed [31:0]      inA_dout,     // dividend
+    input  logic signed [31:0]      inA_dout,  
 
-    // Divisor input port
     output logic                    inB_rd_en,      
     input  logic                    inB_empty,     
-    input  logic signed [31:0]      inB_dout,     // divisor
+    input  logic signed [31:0]      inB_dout, 
 
-    // Quotient output port
+    // Output FIFO interface
     output logic                    out_wr_en,     
     input  logic                    out_full,       
-    output logic signed [31:0]      out_din       // quotient
+    output logic signed [31:0]      out_din   
 );
 
-   // FSM states for controlling the pipeline operation.
-   typedef enum logic [1:0] {S0, S_PIPE, S1} state_t;
-   state_t state, state_c;
-
-   // Parameters: WIDTH is the bit‐width and STAGES is how many pipeline iterations (cycles)
    parameter WIDTH  = 32;
-   parameter STAGES = 32;  // maximum iterations (you might optimize this)
+   parameter STAGES = 32;
 
-   // Pipeline registers (one operation at a time)
-   // a_pipe holds the “working remainder” and q_pipe the accumulated quotient.
-   logic [WIDTH-1:0] a_pipe, q_pipe, b_reg;
-   logic             valid;   // indicates if more subtraction is needed
-   logic             sign;    // computed sign (1 if the result should be negative)
+   //-------------------------------------------------------------------------
+   // Latch input operands and compute absolute values and sign.
+   // A new operation is launched when both input FIFOs have data and the output
+   // FIFO is not full.
+   //-------------------------------------------------------------------------
+   logic [WIDTH-1:0] dividend_abs, divisor_abs;
+   logic             op_sign;
+   logic             op_valid;
 
-   // A simple counter to count pipeline iterations
-   logic [5:0]       pipe_cnt;
+   assign inA_rd_en = (!inA_empty && !inB_empty && !out_full);
+   assign inB_rd_en = (!inA_empty && !inB_empty && !out_full);
 
-   //=====================================================================
-   // Function: msb
-   // Returns the index (0 to WIDTH-1) of the most-significant 1-bit.
-   // (Note: many synthesis tools support a priority encoder or clz operator.)
-   //=====================================================================
+   always_ff @(posedge clock or posedge reset) begin
+      if (reset) begin
+         dividend_abs <= '0;
+         divisor_abs  <= '0;
+         op_sign      <= 1'b0;
+         op_valid     <= 1'b0;
+      end else begin
+         if (inA_rd_en) begin
+            // Compute absolute values.
+            dividend_abs <= (inA_dout[WIDTH-1]) ? -inA_dout : inA_dout;
+            divisor_abs  <= (inB_dout[WIDTH-1]) ? -inB_dout : inB_dout;
+            op_sign      <= inA_dout[WIDTH-1] ^ inB_dout[WIDTH-1];
+            op_valid     <= 1'b1;
+         end else begin
+            op_valid <= 1'b0;
+         end
+      end
+   end
+
+   //-------------------------------------------------------------------------
+   // Pipeline op_valid so that the final result is output after a fixed latency.
+   //-------------------------------------------------------------------------
+   logic op_pipe [0:STAGES];
+   always_ff @(posedge clock or posedge reset) begin
+      if (reset)
+         op_pipe[0] <= 1'b0;
+      else
+         op_pipe[0] <= op_valid;
+   end
+
+   genvar j;
+   generate
+     for (j = 0; j < STAGES; j = j + 1) begin : op_pipe_gen
+       always_ff @(posedge clock or posedge reset) begin
+          if (reset)
+             op_pipe[j+1] <= 1'b0;
+          else
+             op_pipe[j+1] <= op_pipe[j];
+       end
+     end
+   endgenerate
+
+   //-------------------------------------------------------------------------
+   // Pipeline the op_sign so that the sign correction is aligned with the result.
+   //-------------------------------------------------------------------------
+   logic op_sign_pipe [0:STAGES];
+   always_ff @(posedge clock or posedge reset) begin
+      if (reset)
+         op_sign_pipe[0] <= 1'b0;
+      else if (op_valid)
+         op_sign_pipe[0] <= op_sign;
+      // else: if no new op, we inject a bubble (the value won’t be used because op_pipe will be 0)
+   end
+
+   generate
+     for (j = 0; j < STAGES; j = j + 1) begin : sign_pipe
+       always_ff @(posedge clock or posedge reset) begin
+          if (reset)
+             op_sign_pipe[j+1] <= 1'b0;
+          else
+             op_sign_pipe[j+1] <= op_sign_pipe[j];
+       end
+     end
+   endgenerate
+
+   //-------------------------------------------------------------------------
+   // Arithmetic pipeline arrays.
+   // These hold the running remainder, quotient, and an arithmetic valid flag.
+   // Every operation flows through the same pipeline.
+   //-------------------------------------------------------------------------
+   logic [WIDTH-1:0] rem_pipe  [0:STAGES];
+   logic [WIDTH-1:0] quot_pipe [0:STAGES];
+   logic             valid_pipe[0:STAGES];
+
+   //-------------------------------------------------------------------------
+   // Stage 0: Always update with new inputs if available; otherwise, inject a bubble.
+   // This avoids holding a previous value that would collide with later operations.
+   //-------------------------------------------------------------------------
+   always_ff @(posedge clock or posedge reset) begin
+      if (reset) begin
+         rem_pipe[0]   <= '0;
+         quot_pipe[0]  <= '0;
+         valid_pipe[0] <= 1'b0;
+      end else begin
+         if (op_valid) begin
+            // Special-case: if divisor==1, simply set quotient to the dividend.
+            if (divisor_abs == 1) begin
+               quot_pipe[0]  <= dividend_abs;
+               rem_pipe[0]   <= '0;
+               valid_pipe[0] <= 1'b0;
+            end else begin
+               rem_pipe[0]   <= dividend_abs;
+               quot_pipe[0]  <= '0;
+               valid_pipe[0] <= (dividend_abs >= divisor_abs);
+            end
+         end else begin
+            // Inject a bubble.
+            rem_pipe[0]   <= '0;
+            quot_pipe[0]  <= '0;
+            valid_pipe[0] <= 1'b0;
+         end
+      end
+   end
+
+   //-------------------------------------------------------------------------
+   // Helper function: returns the index of the most-significant 1 in x.
+   // (Some synthesis tools support a CLZ operator instead.)
+   //-------------------------------------------------------------------------
    function automatic int msb(input logic [WIDTH-1:0] x);
       int i;
       begin
@@ -53,114 +153,59 @@ module divide_two_inputs (
       end
    endfunction
 
-   //=====================================================================
-   // Sequential block: FSM state update and pipeline register updates
-   //=====================================================================
-   always_ff @(posedge clock or posedge reset) begin
-      if (reset) begin
-         state    <= S0;
-         a_pipe   <= '0;
-         q_pipe   <= '0;
-         b_reg    <= '0;
-         valid    <= 1'b0;
-         sign     <= 1'b0;
-         pipe_cnt <= '0;
-      end else begin
-         state <= state_c;
-         case (state)
-            S0: begin
-               // When valid inputs are available, load the pipeline registers.
-               if (!inA_empty && !inB_empty) begin
-                  // Convert dividend and divisor to absolute values.
-                  logic [WIDTH-1:0] abs_dividend;
-                  logic [WIDTH-1:0] abs_divisor;
-                  abs_dividend = (inA_dout[WIDTH-1]) ? -inA_dout : inA_dout;
-                  abs_divisor  = (inB_dout[WIDTH-1]) ? -inB_dout : inB_dout;
+   //-------------------------------------------------------------------------
+   // Pipeline stages for the iterative division.
+   // When valid_pipe is true, perform one subtraction iteration;
+   // once the arithmetic is complete (valid becomes false), simply propagate the values.
+   //-------------------------------------------------------------------------
+   genvar i;
+   generate
+     for (i = 0; i < STAGES; i = i + 1) begin : div_stage
+       always_ff @(posedge clock or posedge reset) begin
+          if (reset) begin
+             quot_pipe[i+1]  <= '0;
+             rem_pipe[i+1]   <= '0;
+             valid_pipe[i+1] <= 1'b0;
+          end else if (valid_pipe[i]) begin
+             int msb_rem_val;
+             int msb_div_val;
+             int p_temp;
+             int p;
+             msb_rem_val = msb(rem_pipe[i]);
+             msb_div_val = msb(divisor_abs);
+             p_temp = msb_rem_val - msb_div_val;
+             if (p_temp > 0) begin
+                if ((divisor_abs << p_temp) > rem_pipe[i])
+                   p = p_temp - 1;
+                else
+                   p = p_temp;
+             end else begin
+                p = 0;
+             end
+             quot_pipe[i+1]  <= quot_pipe[i] + (1 << p);
+             rem_pipe[i+1]   <= rem_pipe[i] - (divisor_abs << p);
+             valid_pipe[i+1] <= ((rem_pipe[i] - (divisor_abs << p)) >= divisor_abs);
+          end else begin
+             // Propagate bubble.
+             quot_pipe[i+1]  <= quot_pipe[i];
+             rem_pipe[i+1]   <= rem_pipe[i];
+             valid_pipe[i+1] <= 1'b0;
+          end
+       end
+     end
+   endgenerate
 
-                  b_reg    <= abs_divisor;
-                  sign     <= inA_dout[WIDTH-1] ^ inB_dout[WIDTH-1];
-                  pipe_cnt <= 0;
+   //-------------------------------------------------------------------------
+   // Final quotient selection and sign correction.
+   //-------------------------------------------------------------------------
+   logic [WIDTH-1:0] final_quot;
+   assign final_quot = quot_pipe[STAGES];
+   assign out_din    = op_pipe[STAGES] ? (op_sign_pipe[STAGES] ? -final_quot : final_quot) : '0;
 
-                  // Special-case: if divisor==1 then the quotient is just the dividend.
-                  if (abs_divisor == 1) begin
-                     q_pipe <= abs_dividend;
-                     a_pipe <= 0;
-                     valid  <= 1'b0;
-                  end else begin
-                     q_pipe <= 0;
-                     a_pipe <= abs_dividend;
-                     valid  <= (abs_dividend >= abs_divisor);
-                  end
-               end
-            end
-
-            S_PIPE: begin
-               // One pipeline iteration per clock cycle:
-               if (valid) begin
-                  int msb_a, msb_b, p;
-                  msb_a = msb(a_pipe);
-                  msb_b = msb(b_reg);
-                  p = msb_a - msb_b;
-                  // Adjust p if shifting b by p overshoots a.
-                  if ((b_reg << p) > a_pipe)
-                     p = p - 1;
-                  // Update quotient and remainder.
-                  q_pipe <= q_pipe + (1 << p);
-                  a_pipe <= a_pipe - (b_reg << p);
-                  // Check if another subtraction is needed.
-                  valid  <= ((a_pipe - (b_reg << p)) >= b_reg);
-               end
-               pipe_cnt <= pipe_cnt + 1;
-            end
-
-            S1: begin
-               // No pipeline update here; we wait for the result to be consumed.
-            end
-
-            default: ; 
-         endcase
-      end
-   end
-
-   //=====================================================================
-   // Next-State / Output Combinational Logic
-   //=====================================================================
-   always_comb begin
-      // Default assignments for handshaking signals and next state.
-      state_c    = state;
-      inA_rd_en  = 1'b0;
-      inB_rd_en  = 1'b0;
-      out_wr_en  = 1'b0;
-      out_din    = 32'sd0;
-
-      case (state)
-         S0: begin
-            // In S0, if inputs are available, assert read enables.
-            if (!inA_empty && !inB_empty) begin
-               inA_rd_en = 1'b1;
-               inB_rd_en = 1'b1;
-               state_c   = S_PIPE;
-            end
-         end
-
-         S_PIPE: begin
-            // Stay in S_PIPE until we have executed STAGES iterations.
-            if (pipe_cnt == STAGES)
-               state_c = S1;
-         end
-
-         S1: begin
-            // When the output FIFO is not full, send the result.
-            if (!out_full) begin
-               out_wr_en = 1'b1;
-               // Apply sign correction to the computed quotient.
-               out_din   = sign ? -q_pipe : q_pipe;
-               state_c   = S0;
-            end
-         end
-
-         default: state_c = S0;
-      endcase
-   end
+   //-------------------------------------------------------------------------
+   // Output handshake.
+   // The result is released when the operation pipeline (op_pipe) indicates an active operation.
+   //-------------------------------------------------------------------------
+   assign out_wr_en = (!out_full) && op_pipe[STAGES];
 
 endmodule
