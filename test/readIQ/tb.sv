@@ -164,13 +164,14 @@ initial begin : img_read_process
 
     // Read A and B line by line until EOF (1 integer each line)
     // and write to the FIFOs
+    i = 0;
     while (!$feof(a_file)) begin
         @(negedge clock);
         a_in_wr_en = 1'b0;
         if(!a_in_full) begin
-            r = $fread(a_file, A_IN, 4);
-            $display("feeding %b", a_in);
+            r = $fread(a_in, a_file, i*4, 4);
             a_in_wr_en = 1'b1;
+            i++;
         end
     end
 

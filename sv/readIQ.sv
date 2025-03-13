@@ -40,11 +40,12 @@ module read_iq (
    end
 
    // Byte slices for I & Q
-   logic  [7:0] I_1;
-   logic  [7:0] I_2;
-   logic  [7:0] Q_1;
-   logic  [7:0] Q_2;
-
+   logic signed  [7:0] I_1;
+   logic signed [7:0] I_2;
+   logic signed [7:0] Q_1;
+   logic  signed [7:0] Q_2;
+   logic signed [31:0] tmpI;
+   logic signed [31:0] tmpQ;
    always_comb begin
       // Defaults
       inA_rd_en   = 1'b0;
@@ -58,13 +59,18 @@ module read_iq (
       state_c     = state;
       I_c         = I;
       Q_c         = Q;
+      Q_1 = 8'sd0;
+      Q_2 = 8'sd0;
+      I_1 = 8'sd0;
+      I_2 = 8'sd0;
+      tmpI = 32'sd0;
+      tmpQ = 32'sd0;
 
       case (state)
          S0: begin
             // Wait for input FIFO to have data
             if (!inA_empty) begin
                inA_rd_en = 1'b1;
-               $display("got %b", inA_dout);
 
                // According to the C code layout:
                //   IQ[i*4+0] => inA_dout[ 7: 0]  (LSB of I)
@@ -72,18 +78,16 @@ module read_iq (
                //   IQ[i*4+2] => inA_dout[23:16] (LSB of Q)
                //   IQ[i*4+3] => inA_dout[31:24] (MSB of Q)
 
-               I_2 = inA_dout[ 7: 0];  // LSB of I
-               I_1 = inA_dout[15: 8];  // MSB of I
-               Q_2 = inA_dout[23:16];  // LSB of Q
-               Q_1 = inA_dout[31:24];  // MSB of Q
-
+               Q_1 = inA_dout[7:0];     // LSB for I
+               Q_2 = inA_dout[15:8];    // MSB for I
+               I_1 = inA_dout[23:16];   // LSB for Q
+               I_2 = inA_dout[31:24];   // MSB for Q
+               tmpI = $signed({I_1, I_2});
+               tmpQ =  $signed({Q_1, Q_2});
                // Convert to 16-bit signed, then quantize
                // Must do {MSB, LSB} for correct endianness:
-               I_c = GLOBALS::QUANTIZE_I( $signed({I_1, I_2}) );
-               Q_c = GLOBALS::QUANTIZE_I( $signed({Q_1, Q_2}) );
-
-               $display("I=%0d", I_c);
-               $display("Q=%0d", Q_c);
+               Q_c = GLOBALS::QUANTIZE_I( tmpQ);
+               I_c = GLOBALS::QUANTIZE_I( tmpI);
 
                state_c = S1;
             end
@@ -98,7 +102,8 @@ module read_iq (
 
                out_din_2   = Q;
                out_wr_en_2 = 1'b1;
-
+               $display("writing out i=%d", I);
+               $display("writing out q=%d", Q);
                state_c = S0;
             end
          end
@@ -107,6 +112,7 @@ module read_iq (
             state_c = S0;
             I_c     = 32'sd0;
             Q_c     = 32'sd0;
+
          end
       endcase
    end
