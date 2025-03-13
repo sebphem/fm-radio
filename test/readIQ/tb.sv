@@ -169,8 +169,8 @@ initial begin : img_read_process
         a_in_wr_en = 1'b0;
         if(!a_in_full) begin
             r = $fscanf(a_file, "%d\n", a_in);
+            $display("feeding %d", a_in);
             a_in_wr_en = 1'b1;
-            a_in = a_in;
         end
     end
 

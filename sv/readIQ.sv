@@ -4,7 +4,7 @@ module read_iq (
 
     output logic         inA_rd_en,      
     input  logic         inA_empty,      
-    input  logic    [63:0] inA_dout,
+    input  logic    [31:0] inA_dout,
 
     output logic         out_wr_en,     
     input  logic         out_full,       
@@ -48,11 +48,12 @@ module read_iq (
       case (state)
          S0: begin
             if (!inA_empty) begin
+               $display("got %d", inA_dout);
                inA_rd_en = 1'b1;
-               I_1 = inA_dout[63:48];
-               I_2 = inA_dout[47:32];
-               Q_1 = inA_dout[31:16];
-               Q_2 = inA_dout[15:0];
+               I_1 = inA_dout[31:24];
+               I_2 = inA_dout[23:16];
+               Q_1 = inA_dout[15:8];
+               Q_2 = inA_dout[7:0];
                I_c = GLOBALS::QUANTIZE_I({I_2, I_1});
                Q_c = GLOBALS::QUANTIZE_I({Q_2, Q_1});
                state_c = S1;
