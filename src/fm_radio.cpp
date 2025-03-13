@@ -105,10 +105,17 @@ void fm_radio_stereo(unsigned char *IQ, int *left_audio, int *right_audio)
 void read_IQ( unsigned char *IQ, int *I, int *Q, int samples )
 {
     int i = 0;
+    FILE *fp1 = fopen("../test/readIQ/a.txt", "w");
+    FILE *fp2 = fopen("../test/readIQ/cmpI.txt", "w");
+    FILE *fp2 = fopen("../test/readIQ/cmpQ.txt", "w");
     for ( i = 0; i < samples; i++ )
     {
+        // write 64 bit value(IQ[i*4+0]:IQ[i*4+3]) to fp1
+        fprintf(fp1, "%d\n", ((uint64_t*)(&IQ[i*4]))[0]);
         I[i] = QUANTIZE_I((short)(IQ[i*4+1] << 8) | (short)IQ[i*4+0]);
         Q[i] = QUANTIZE_I((short)(IQ[i*4+3] << 8) | (short)IQ[i*4+2]);
+        fprintf(fp2, "%d\n", I[i]);
+        fprintf(fp3, "%d\n", Q[i]);
     }
 }
 
@@ -137,6 +144,11 @@ void demodulate( int real, int imag, int *real_prev, int *imag_prev, const int g
     FILE *fp_tan1 = fopen("../test/qarctan/a.txt", "w");
     FILE *fp_tan2 = fopen("../test/qarctan/b.txt", "w");
     FILE *fp_tan3 = fopen("../test/qarctan/cmp.txt", "w");
+    if(!fp_tan1 || !fp_tan2 || !fp_tan3)
+    {
+        printf("Error opening file\n");
+        exit(1);
+    }
     fprintf(fp_tan1, "%d\n", i);
     fprintf(fp_tan2, "%d\n", r);
     *demod_out = DEQUANTIZE(gain * qarctan(i, r));
