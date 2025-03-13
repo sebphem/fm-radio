@@ -24,7 +24,7 @@ logic   in_write_done = '0;
 logic   out_read_done = '0;
 integer out_errors    = '0;
 
-logic [63:0] a_in;
+logic [31:0] a_in;
 logic signed [31:0] sum_in;
 logic signed [31:0] sum_in2;
  
@@ -40,7 +40,7 @@ logic a_in_rd_en;
 logic sum_in_rd_en;
 logic sum_in_rd_en2;
 
-logic [63:0] a_in_dout;
+logic [31:0] a_in_dout;
 logic signed [31:0] sum_in_dout;
 logic signed [31:0] sum_in_dout2;
 
@@ -54,7 +54,7 @@ assign in_full = a_in_full;
 
 fifo #(
         .FIFO_BUFFER_SIZE(256),
-        .FIFO_DATA_WIDTH(64)
+        .FIFO_DATA_WIDTH(32)
 ) a_in_fifo (
     .reset(reset),
     .wr_clk(clock),
@@ -168,8 +168,8 @@ initial begin : img_read_process
         @(negedge clock);
         a_in_wr_en = 1'b0;
         if(!a_in_full) begin
-            r = $fscanf(a_file, "%d\n", a_in);
-            $display("feeding %d", a_in);
+            r = $fscanf(a_file, "%u\n", a_in);
+            $display("feeding %u", a_in);
             a_in_wr_en = 1'b1;
         end
     end

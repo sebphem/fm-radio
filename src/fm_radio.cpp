@@ -111,8 +111,8 @@ void read_IQ( unsigned char *IQ, int *I, int *Q, int samples )
     FILE *fp3 = fopen("../test/readIQ/cmpQ.txt", "a");
     for ( i = 0; i < samples; i++ )
     {
-        // write 64 bit value(IQ[i*4+0]:IQ[i*4+3]) to fp1
-        fprintf(fp1, "%ld\n", ((uint64_t*)(&IQ[i*4]))[0]);
+        // write 32 bit value(IQ[i*4+0]:IQ[i*4+3]) to fp1
+        fwrite(&IQ[i*4], sizeof(char), 4, fp1);
         I[i] = QUANTIZE_I((short)(IQ[i*4+1] << 8) | (short)IQ[i*4+0]);
         Q[i] = QUANTIZE_I((short)(IQ[i*4+3] << 8) | (short)IQ[i*4+2]);
         fprintf(fp2, "%d\n", I[i]);
