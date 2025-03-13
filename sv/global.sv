@@ -22,4 +22,10 @@ package GLOBALS;
     localparam MAX_TAPS = 32;
     localparam IIR_COEFF_TAPS = 2;
     localparam IIR_COEFF_TAP_BITS = 1;
+
+    localparam ADC_RATE = 64000000;
+    localparam USRP_DECIM = 250;
+    localparam MAX_DEV = 55000.0;
+    localparam QUAD_RATE = int'(ADC_RATE / USRP_DECIM);
+    localparam FM_DEMOD_GAIN = QUANTIZE_F(QUAD_RATE / (2.0 * PI_REAL * MAX_DEV));
 endpackage
