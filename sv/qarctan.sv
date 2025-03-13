@@ -40,17 +40,14 @@ module qarctan_two_inputs (
     input  logic         out_full,       
     output logic signed [31:0] out_din    
 );
-   localparam logic signed [31:0] quad1 = GLOBALS::QUANTIZE_F(GLOBALS::PI_REAL / 4.0);
-   localparam logic signed [31:0] quad3 = GLOBALS::QUANTIZE_F(3.0 * GLOBALS::PI_REAL / 4.0);
+   localparam logic signed [31:0] quad1 = 804;
+   localparam logic signed [31:0] quad3 = 2412;
    
    typedef enum logic [0:0] {S0, S1} state_t;
    state_t state, state_c;
 
    logic signed [31:0] multiply, multiply_c;
    
-   function automatic logic abs_value(input logic signed [31:0] value);
-    return (value < 0) ? -value : value;
-   endfunction
    
    logic signed [31:0] abs_y;
    logic signed [31:0] angle;
@@ -65,7 +62,6 @@ module qarctan_two_inputs (
          multiply   <= multiply_c;
       end
    end
-
    always_comb begin
       inA_rd_en  = 1'b0;
       inB_rd_en  = 1'b0;
@@ -74,8 +70,8 @@ module qarctan_two_inputs (
 
       state_c = state;
       multiply_c   = multiply;
-
-      abs_y = abs_value(inA_dout) + 1;  
+      
+      assign abs_y = ((inA_dout < 0) ? -inA_dout : inA_dout) + 1;
       r = 0;
       angle = 0;
 
@@ -91,6 +87,7 @@ module qarctan_two_inputs (
                   r = GLOBALS::QUANTIZE_I(inB_dout + abs_y) / (abs_y - inB_dout);
                   angle = quad3 - GLOBALS::DEQUANTIZE_I(quad1 * r);
                end
+               
                multiply_c = (inA_dout < 0) ? -angle : angle;
                state_c = S1;
             end
