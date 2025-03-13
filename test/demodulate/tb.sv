@@ -6,9 +6,7 @@ module demodulate_tb;
 localparam string A_IN  = "../a.txt";
 localparam string B_IN = "../b.txt";
 localparam string CMP_IN = "../cmp.txt";
-localparam string CMP2_IN = "../cmp2.txt";
 localparam string OUT_NAME = "../out.txt";
-localparam string OUT2_NAME = "../out2.txt";
 
 localparam CLOCK_PERIOD = 10;
 
@@ -31,32 +29,26 @@ integer out_errors    = '0;
 logic signed [31:0] a_in;
 logic signed [31:0] b_in;
 logic signed [31:0] sum_in;
-logic signed [31:0] sum_2_in;
  
 logic a_in_wr_en = '0;
 logic b_in_wr_en = '0;
 logic sum_in_wr_en;
-logic sum_in_2_wr_en;
 
 logic a_in_full;
 logic b_in_full;
 logic sum_in_full;
-logic sum_in_2_full;
 
 logic a_in_rd_en;
 logic b_in_rd_en;
 logic sum_in_rd_en;
-logic sum_in_2_rd_en;
 
 logic signed [31:0] a_in_dout;
 logic signed [31:0] b_in_dout;
 logic signed [31:0] sum_in_dout;
-logic signed [31:0] sum_in_2_dout;
 
 logic a_in_empty;
 logic b_in_empty;
 logic sum_in_empty;
-logic sum_in_2_empty;
 
 logic in_full;
 assign in_full = a_in_full || b_in_full;
@@ -100,12 +92,9 @@ demodulate_two_inputs multiply_inst (
     .inB_rd_en(b_in_rd_en),
     .inB_empty(b_in_empty),
     .inB_dout(b_in_dout),
-    .out_real_wr_en(sum_in_wr_en),
-    .out_real_full(sum_in_full),
-    .out_real_din(sum_in),
-    .out_imag_wr_en(sum_in_2_wr_en),
-    .out_imag_full(sum_in_2_full),
-    .out_imag_din(sum_2_in)
+    .out_wr_en(sum_in_wr_en),
+    .out_full(sum_in_full),
+    .out_din(sum_in)
 );
 
 fifo #(
@@ -121,21 +110,6 @@ fifo #(
     .rd_en(sum_in_rd_en),
     .dout(sum_in_dout),
     .empty(sum_in_empty)
-);
-
-fifo #(
-        .FIFO_BUFFER_SIZE(256),
-        .FIFO_DATA_WIDTH(32)
-) sum_in_2_fifo (
-    .reset(reset),
-    .wr_clk(clock),
-    .wr_en(sum_in_2_wr_en),
-    .din(sum_2_in),
-    .full(sum_in_2_full),
-    .rd_clk(clock),
-    .rd_en(sum_in_2_rd_en),
-    .dout(sum_in_2_dout),
-    .empty(sum_in_2_empty)
 );
 
 always begin
@@ -220,15 +194,11 @@ initial begin : img_read_process
 end
 
 initial begin : img_write_process
-    int i, r, r2;
+    int i, r;
     int out_file;
-    int out_file2;
     int cmp_file;
-    int cmp2_file;
     int cmp_value;
-    int cmp2_value;
     int sum_value;
-    int sum_value2;
 
     @(negedge reset);
     @(negedge clock);
@@ -236,9 +206,7 @@ initial begin : img_write_process
     $display("@ %0t: Comparing file %s...", $time, OUT_NAME);
     
     out_file = $fopen(OUT_NAME, "w");
-    out_file2 = $fopen(OUT2_NAME, "w");
     cmp_file = $fopen(CMP_IN, "r");
-    cmp2_file = $fopen(CMP2_IN, "r");
     sum_in_rd_en = 1'b0;
 
     i = 0;
@@ -247,32 +215,22 @@ initial begin : img_write_process
         sum_in_rd_en = 1'b0;
 
         // Read from the sum FIFO if it's not empty
-        if (sum_in_empty == 1'b0 && sum_in_2_empty == 1'b0) begin
+        if (sum_in_empty == 1'b0) begin
             sum_in_rd_en = 1'b1;
-            sum_in_2_rd_en = 1'b1;
             r = $fscanf(cmp_file, "%d\n", cmp_value);
-            r2 = $fscanf(cmp2_file, "%d\n", cmp2_value);
             sum_value = sum_in_dout;
-            sum_value2 = sum_in_2_dout;
             $fwrite(out_file, "%d\n", sum_value); 
-            $fwrite(out_file2, "%d\n", sum_value2); 
             if (sum_value != cmp_value) begin
                 out_errors += 1;
                 $display("@ %0t: ERROR: Mismatch at line %0d: Expected %d, Got %d", $time, i+1, cmp_value, sum_value);
-            end
-            if (sum_value2 != cmp2_value) begin
-                out_errors += 1;
-                $display("@ %0t: ERROR: Mismatch at line %0d: Expected %d, Got %d", $time, i+1, cmp2_value, sum_value2);
             end
             i += 1;
         end
     end
     sum_in_rd_en = 1'b0;
-    sum_in_2_rd_en = 1'b0;
     @(negedge clock);
     $fclose(out_file);
     $fclose(cmp_file);
-    $fclose(cmp2_file);
     out_read_done = 1'b1;
 end
 
