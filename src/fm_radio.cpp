@@ -115,10 +115,15 @@ void read_IQ( unsigned char *IQ, int *I, int *Q, int samples )
 void demodulate_n( int *real, int *imag, int *real_prev, int *imag_prev, const int n_samples, const int gain, int *demod_out )
 {
     int i = 0;
-
+    FILE *fp1 = fopen("../test/demodulate/a.txt", "w");
+    FILE *fp2 = fopen("../test/demodulate/b.txt", "w");
+    FILE *fp3 = fopen("../test/demodulate/cmp.txt", "w");
     for ( i = 0; i < n_samples; i++ )
     {
+        fprintf(fp1, "%d\n", real[i]);
+        fprintf(fp2, "%d\n", imag[i]);
         demodulate( real[i], imag[i], real_prev, imag_prev, gain, &demod_out[i] );
+        fprintf(fp3, "%d\n", demod_out[i]);
     }
 }
 
@@ -129,8 +134,13 @@ void demodulate( int real, int imag, int *real_prev, int *imag_prev, const int g
     int r = DEQUANTIZE(*real_prev * real) - DEQUANTIZE(-*imag_prev * imag);
     int i = DEQUANTIZE(*real_prev * imag) + DEQUANTIZE(-*imag_prev * real);
     
+    FILE *fp_tan1 = fopen("../test/qarctan/a.txt", "w");
+    FILE *fp_tan2 = fopen("../test/qarctan/b.txt", "w");
+    FILE *fp_tan3 = fopen("../test/qarctan/cmp.txt", "w");
+    fprintf(fp_tan1, "%d\n", i);
+    fprintf(fp_tan2, "%d\n", r);
     *demod_out = DEQUANTIZE(gain * qarctan(i, r));
-
+    fprintf(fp_tan3, "%d\n", qarctan(i,r));
     // update the previous values
     *real_prev = real;
     *imag_prev = imag;
@@ -335,6 +345,7 @@ void gain_n( int *input, const int n_samples, int gain, int *output )
 
 int qarctan(int y, int x)
 {
+
     const int quad1 = QUANTIZE_F(PI / 4.0);
     const int quad3 = QUANTIZE_F(3.0 * PI / 4.0);
 
@@ -342,14 +353,24 @@ int qarctan(int y, int x)
     int angle = 0; 
     int r = 0;
 
+    FILE *fp1 = fopen("../test/divide/a.txt", "w");
+    FILE *fp2 = fopen("../test/divide/b.txt", "w");
+    FILE *fp3 = fopen("../test/divide/cmp.txt", "w");
+
     if ( x >= 0 ) 
     {
+        fprintf(fp1, "%d\n", QUANTIZE_I(x - abs_y));
+        fprintf(fp2, "%d\n", (x + abs_y));
         r = QUANTIZE_I(x - abs_y) / (x + abs_y);
+        fprintf(fp3, "%d\n", r);
         angle = quad1 - DEQUANTIZE(quad1 * r);
     } 
     else 
     {
+        fprintf(fp1, "%d\n", QUANTIZE_I(x + abs_y));
+        fprintf(fp2, "%d\n", (abs_y - x));
         r = QUANTIZE_I(x + abs_y) / (abs_y - x);
+        fprintf(fp3, "%d\n", r);
         angle = quad3 - DEQUANTIZE(quad1 * r);
     }
 

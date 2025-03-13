@@ -84,7 +84,6 @@ module qarctan_two_inputs (
             if (!inA_empty && !inB_empty) begin
                inA_rd_en = 1'b1;
                inB_rd_en = 1'b1;
-               
                if(inB_dout >= 0) begin
                   r = GLOBALS::QUANTIZE_I(inB_dout - abs_y) / (inB_dout + abs_y);
                   angle = quad1 - GLOBALS::DEQUANTIZE_I(quad1 * r);
