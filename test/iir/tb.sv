@@ -12,6 +12,7 @@ logic clock = 1'b1;
 logic reset = '0;
 
 logic x_in_rd_en;
+logic x_in_full;
 logic x_in_empty;
 logic signed [31:0] x_in;
 
@@ -38,11 +39,22 @@ fifo #(
     .wr_clk(clock),
     .wr_en(x_in_wr_en),
     .din(x_in),
-    .full(x_in_empty),
+    .full(x_in_full),
     .rd_clk(clock),
     .rd_en(x_in_rd_en),
     .dout(x_in_dout),
     .empty(x_in_empty)
+);
+
+iir iir_inst (
+    .clk(clock),
+    .rst(reset),
+    .x_in_rd_en(x_in_rd_en),
+    .x_in_empty(x_in_empty),
+    .x_in(x_in_dout),
+    .y_out(y_out),
+    .y_out_wr_en(y_out_wr_en),
+    .y_out_full(y_out_full)
 );
 
 fifo #(
@@ -60,17 +72,6 @@ fifo #(
     .empty(y_out_empty)
 );
 
-iir iir_inst (
-    .clk(clock),
-    .rst(reset),
-    .x_in_rd_en(x_in_rd_en),
-    .x_in_empty(x_in_empty),
-    .x_in(x_in_dout),
-    .y_out(y_out),
-    .y_out_wr_en(y_out_wr_en),
-    .y_out_full(y_out_full)
-);
-
 always begin
     clock = 1'b1;
     #(CLOCK_PERIOD/2);
@@ -83,6 +84,13 @@ initial begin
     reset = 1'b1;
     @(posedge clock);
     reset = 1'b0;
+end
+
+always begin
+    @(posedge clock);
+    #100000;
+    @(posedge clock);
+    $finish;
 end
 
 initial begin : tb_process
@@ -118,7 +126,7 @@ initial begin : img_read_process
 
     while (!$feof(x_file)) begin
         r = $fscanf(x_file, "%d\n", x_in);
-        while (x_in_empty) begin
+        while (x_in_full) begin
             @(posedge clock);
         end
         x_in_wr_en = 1'b1;
@@ -129,6 +137,7 @@ initial begin : img_read_process
     @(negedge clock);
     $fclose(x_file);
     in_write_done = 1'b1;
+    $display("input done");
 end
 
 initial begin : img_write_process
@@ -166,6 +175,7 @@ initial begin : img_write_process
     $fclose(out_file);
     $fclose(cmp_file);
     out_read_done = 1'b1;
+    $display("checker + writer done");
 end
 
 endmodule
