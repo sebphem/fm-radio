@@ -10,6 +10,11 @@ package GLOBALS;
     function automatic int QUANTIZE_F(input real f);
         return int'(f * QUANT_VAL);
     endfunction
+    function automatic real DEQUANTIZE_F(input int i);
+        return real'(i) / real'(QUANT_VAL);
+    endfunction
+    localparam PI_REAL = 3.1415926535897932385;
+    localparam PI = QUANTIZE_F(PI_REAL);
     localparam VOLUME_LEVEL = QUANTIZE_F(1.0);
     localparam ADUIO_DECIM = 8;
     localparam SAMPLES = 65536*4;
