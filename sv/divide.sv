@@ -1,195 +1,230 @@
 `ifndef _DIVIDE_
 `define _DIVIDE_
+
 `include "global.sv"
-localparam DATA_WIDTH = 32;
+
 module divide_two_inputs (
-    input  logic                        clk,
-    input  logic                        reset,
-    input  logic                        valid_in,
-    input  logic [32-1:0]   dividend,
-    input  logic [32-1:0]    divisor,
-    output logic [32-1:0]   quotient,
-    output logic [32-1:0]    remainder,
-    output logic                        valid_out,
-    output logic                        overflow
+    input  logic                   clock,
+    input  logic                   reset,
+
+    // Dividend input port
+    output logic                   inA_rd_en,      
+    input  logic                   inA_empty,      
+    input  logic signed [31:0]     inA_dout,     
+
+    // Divisor input port
+    output logic                   inB_rd_en,      
+    input  logic                   inB_empty,     
+    input  logic signed [31:0]     inB_dout,     
+
+    // Quotient output port
+    output logic                   out_wr_en,     
+    input  logic                   out_full,       
+    output logic signed [31:0]     out_din        
 );
 
-    // Define the state machine states
-    typedef enum logic [2:0] {
-        INIT, B_EQ_1, GET_MSB, LOOP, LOOP2,  EPILOGUE, DONE
-    } state_t;
-    state_t state, next_state;
+   // Pipeline states
+   typedef enum logic [3:0] {
+       S0, 
+       S_FINDMSB_A,
+       S_FINDMSB_B,
+       S_ADJUST,
+       S_ADDQ,
+       S_SUBA,
+       S_CHECK,
+       S1
+   } state_t;
+   state_t state, state_next;
 
-    // Define internal signals
-    logic signed [32-1:0] a, a_c;
-    logic signed [32-1:0] b, b_c;
-    logic signed [32-1:0] q, q_c;
-    logic signed [DATA_WIDTH-1:0] p, p_c, p_temp;
-    logic internal_sign;
+   parameter WIDTH  = 32;
+   parameter STAGES = 32;  // # of bit iterations
 
-    // Registered values for msb(a) and msb_b
-    logic [$clog2(DATA_WIDTH)-1:0] msb_a, msb_a_c;
-    logic [$clog2(DATA_WIDTH)-1:0] msb_b, msb_b_c;
+   // Pipeline registers
+   logic [WIDTH-1:0] a_pipe, q_pipe, b_reg;
+   logic             sign; 
+   logic             valid;       // keep iterating?
+   logic [5:0]       pipe_cnt;    // iteration counter
+   logic [31:0]      p_reg;       // shift amount
+   // These hold the msb(...) results for an iteration
+   int               msb_a_reg;
+   int               msb_b_reg;
 
-    logic signed [DATA_WIDTH-1:0] remainder_condition;
-
-    // State machine and calculation logic
-    always_ff @(posedge clk or posedge reset) begin
-        if (reset == 1'b1) begin
-            state <= INIT;
-            a <= '0;
-            b <= '0;
-            q <= '0;
-            msb_a <= '0;
-            msb_b <= '0;
-            p <= '0;
-        end else begin
-            state <= next_state;
-            a <= a_c;
-            b <= b_c;
-            q <= q_c;
-            msb_a <= msb_a_c;
-            msb_b <= msb_b_c;
-            p <= p_c;
-        end
-    end
-
-    // Calculate the most significant bit position of a non-negative number
-    // function automatic int get_msb_pos(logic [32-1:0] num);
-    //     int pos;
-    //     for (pos = 32-1; pos >= 0; pos--) begin
-    //         if (num[pos] == 1'b1) begin
-    //             return pos;
-    //         end
-    //     end
-    //     return -1; // Return -1 if the number is zero
-    // endfunction
-
-    // Recursive get_msb
-    function automatic logic [$clog2(32)-1:0] get_msb_pos(logic [32-1:0] input_vector, logic [$clog2(32)-1:0] index);
-    
-        logic [$clog2(32)-1:0] left_result;
-        logic [$clog2(32)-1:0] right_result;
-
-        if (input_vector[index] == 1'b1) 
-            return index;
-        else if (index == 1'b0) 
-            return '0;
-        else begin
-
-            left_result = get_msb_pos(input_vector, index - 1);
-            right_result = get_msb_pos(input_vector, (index - 1) / 2);
-
-            if (left_result >= '0) 
-                return left_result;
-            else if (right_result >= '0)  
-                return right_result;
-            else 
-                return '0;
-
-        end
-    endfunction
-
-    always_comb begin
-        next_state = state;
-        a_c = a;
-        b_c = b;
-        q_c = q;
-        valid_out = '0;
-        msb_a_c = msb_a;
-        msb_b_c = msb_b;
-        p_c = p;
-        quotient = '0;
-        remainder = '0;
-        valid_out = 1'b0;
-        overflow =  1'b0;
-
-        case (state)
-
-            INIT: begin
-                // Only assign stuff is valid_in is high
-                if (valid_in == 1'b1) begin
-                    overflow = 1'b0;
-                    a_c = (dividend[32-1] == 1'b0) ? dividend : -dividend;
-                    b_c = (divisor[32-1] == 1'b0) ? divisor : -divisor;
-                    q_c = '0;
-                    p_c = '0;
-
-                    if (divisor == 1) begin
-                        next_state = B_EQ_1;
-                    end else if (divisor == 0) begin
-                        overflow = 1'b1;
-                        next_state = B_EQ_1;
-                    end else begin
-                        next_state = GET_MSB;
-                    end
-                    // Else stay in this state to wait for valid_in signal to be high
-                end else 
-                    next_state = INIT;
+   // “Most‐Significant Bit” function
+   function automatic int msb(input logic [WIDTH-1:0] x);
+      int i;
+      begin
+         msb = 0;
+         for (i = WIDTH-1; i >= 0; i--) begin
+            if (x[i]) begin
+               msb = i;
+               break;
             end
+         end
+      end
+   endfunction
+   logic [WIDTH-1:0] next_a;
+   // Synchronous update of registers & FSM
+   always_ff @(posedge clock or posedge reset) begin
+      if (reset) begin
+         state      <= S0;
+         a_pipe     <= '0;
+         q_pipe     <= '0;
+         b_reg      <= '0;
+         sign       <= 1'b0;
+         valid      <= 1'b0;
+         pipe_cnt   <= '0;
+         p_reg      <= '0;
+         msb_a_reg  <= 0;
+         msb_b_reg  <= 0;
+         next_a    <= '0;
+      end 
+      else begin
+         state <= state_next;
 
-            B_EQ_1: begin
-                q_c = dividend;
-                a_c = '0;
-                b_c = b;
-                next_state = EPILOGUE;
+         case (state)
+
+           //======================================================
+           S0: begin
+               // If data present on both inputs, latch them
+               if (!inA_empty && !inB_empty) begin
+                  // Take absolute values, figure out sign
+                  logic [WIDTH-1:0] absA;
+                  logic [WIDTH-1:0] absB;
+                  absA = inA_dout[31] ? -inA_dout : inA_dout;
+                  absB = inB_dout[31] ? -inB_dout : inB_dout;
+
+                  sign     <= inA_dout[31] ^ inB_dout[31];
+                  a_pipe   <= absA;
+                  b_reg    <= absB;
+                  q_pipe   <= 0;
+                  pipe_cnt <= 0;
+                  // “valid” means we still have more sub cycles to do
+                  valid    <= (absA >= absB);
+               end
+           end
+
+           //======================================================
+           S_FINDMSB_A: begin
+               // Compute msb of a_pipe, store in msb_a_reg
+               msb_a_reg <= msb(a_pipe);
+           end
+
+           //======================================================
+           S_FINDMSB_B: begin
+               // Compute msb of b_reg, store in msb_b_reg
+               msb_b_reg <= msb(b_reg);
+           end
+
+           //======================================================
+           S_ADJUST: begin
+               // Compare msb_a_reg, msb_b_reg => figure out p
+               int tmp_p;
+               tmp_p = msb_a_reg - msb_b_reg;
+               if ((b_reg << tmp_p) > a_pipe)
+                  tmp_p = tmp_p - 1;
+               p_reg <= tmp_p;
+           end
+
+           //======================================================
+           S_ADDQ: begin
+               // Update the quotient
+               q_pipe <= q_pipe + (1 << p_reg);
+           end
+
+           //======================================================
+           S_SUBA: begin
+               // Subtract from the remainder
+               a_pipe <= a_pipe - (b_reg << p_reg);
+           end
+
+           //======================================================
+           S_CHECK: begin
+               // Check if we still can subtract more
+               // or if we have completed STAGES
+               next_a = a_pipe - (b_reg << p_reg);
+               valid     <= (next_a >= b_reg);
+               pipe_cnt  <= pipe_cnt + 1;
+           end
+
+           //======================================================
+           S1: begin
+               // wait for out_full to go low
+           end
+
+         endcase
+      end
+   end
+
+   // Next-state & output logic
+   always_comb begin
+      state_next = state;
+      inA_rd_en  = 1'b0;
+      inB_rd_en  = 1'b0;
+      out_wr_en  = 1'b0;
+      out_din    = 32'sd0;
+
+      case (state)
+         //-------------------------------------------------------
+         S0: begin
+            // If both inputs present, read them and go to S_FINDMSB_A
+            if (!inA_empty && !inB_empty) begin
+               inA_rd_en  = 1'b1;
+               inB_rd_en  = 1'b1;
+               state_next = S_FINDMSB_A;
             end
+         end
 
-            // State dedicated to calculating MSBs because it's slow 
-            GET_MSB: begin
-                msb_a_c = get_msb_pos(a,(32-1));
-                msb_b_c = get_msb_pos(b,(32-1));
-                // msb_a_c = get_msb_pos(a);
-                // msb_b_c = get_msb_pos(b);
-                next_state = LOOP;
+         //-------------------------------------------------------
+         S_FINDMSB_A: begin
+            // Next, find msb_b
+            state_next = S_FINDMSB_B;
+         end
+
+         //-------------------------------------------------------
+         S_FINDMSB_B: begin
+            // Next, compute shift p
+            state_next = S_ADJUST;
+         end
+
+         //-------------------------------------------------------
+         S_ADJUST: begin
+            // Next, add to quotient
+            state_next = S_ADDQ;
+         end
+
+         //-------------------------------------------------------
+         S_ADDQ: begin
+            // Next, subtract from remainder
+            state_next = S_SUBA;
+         end
+
+         //-------------------------------------------------------
+         S_SUBA: begin
+            // Next, check iteration conditions
+            state_next = S_CHECK;
+         end
+
+         //-------------------------------------------------------
+         S_CHECK: begin
+            // If done, go to S1, else keep iterating
+            if (pipe_cnt >= STAGES || !valid)
+               state_next = S1;
+            else
+               state_next = S_FINDMSB_A; 
+         end
+
+         //-------------------------------------------------------
+         S1: begin
+            // If out_full=0, we can send out the result
+            if (!out_full) begin
+               out_wr_en  = 1'b1;
+               out_din    = sign ? -q_pipe : q_pipe;
+               state_next = S0;
             end
-
-            LOOP: begin
-
-                p_temp = msb_a - msb_b;
-
-                p_c = ((b << p_temp) > a) ? p_temp - 1 : p_temp;
-                
-                next_state = LOOP2;
-            end
-
-            LOOP2: begin
-
-                q_c = q + (1 << p);
-
-                if ((b != '0) && (b <= a)) begin
-                    a_c = a - (b << p);
-                    next_state = GET_MSB;
-                end else begin
-                    next_state = EPILOGUE;
-                end
-
-            end
-
-            EPILOGUE: begin
-                internal_sign = dividend[32-1] ^ divisor[32-1];
-                quotient = (internal_sign == 1'b0) ? q : -q;
-                remainder_condition = dividend[32-1];
-                remainder = (remainder_condition == 1'b0) ? a : -a;
-                valid_out = 1'b1;
-                next_state = INIT;
-            end
-
-            default: begin
-                quotient = '0;
-                remainder = '0;
-                valid_out = 1'b0;
-                overflow  = 1'b0;
-                next_state = INIT;
-                a_c = 'X;
-                b_c = 'X;
-                q_c = 'X;
-                msb_a_c = 'X;
-                msb_b_c = 'X;
-                p_c = 'X;
-            end
-        endcase
-    end
+         end
+      endcase
+   end
 
 endmodule
+
 `endif

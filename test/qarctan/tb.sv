@@ -172,6 +172,7 @@ initial begin : img_read_process
 
     // Read A and B line by line until EOF (1 integer each line)
     // and write to the FIFOs
+    i = 0;
     while (!$feof(a_file) && !$feof(b_file)) begin
         @(negedge clock);
         a_in_wr_en = 1'b0;
@@ -183,6 +184,7 @@ initial begin : img_read_process
             b_in_wr_en = 1'b1;
             a_in = a_in;
             b_in = b_in;
+            i += 1;
         end
     end
 
@@ -210,7 +212,7 @@ initial begin : img_write_process
     sum_in_rd_en = 1'b0;
 
     i = 0;
-    while (!$feof(cmp_file)) begin
+    while (!$feof(cmp_file) ) begin
         @(negedge clock);
         sum_in_rd_en = 1'b0;
 
