@@ -1,6 +1,7 @@
 `ifndef _FIR_
 `define _FIR_
 `include "global.sv"
+(* syn_black_box *)
 module fir #(
     parameter int DECIMATION = 2,     // Decimation factor
     parameter int TAPS = 32,
@@ -17,7 +18,6 @@ module fir #(
     output logic y_out_wr_en,
     input logic y_out_full
 );
-
     // FSM State Definition
     typedef enum logic [3:0] {
         LOAD_SHIFT,    // Load new sample and shift register

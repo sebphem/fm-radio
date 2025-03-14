@@ -160,79 +160,145 @@ module demodulate_stage_1 (
     input  logic         out2_full,       
     output logic signed [31:0] out2_din    
 );
-   
-   typedef enum logic [0:0] {S0, S1} state_t;
+
+   // Extend the state machine to three states.
+   typedef enum logic [1:0] { S0, S1, S2 } state_t;
    state_t state, state_c;
 
+   // Registers holding the previous values (used in the multiplication)
+   // and temporary storage for the newly read inputs.
    logic signed [31:0] real_prev, real_prev_c;
    logic signed [31:0] imag_prev, imag_prev_c;
+   logic signed [31:0] curr_A,    curr_A_c;
+   logic signed [31:0] curr_B,    curr_B_c;
 
+   // Intermediate multiplication results.
+   logic signed [31:0] mult_A,  mult_A_c;
+   logic signed [31:0] mult_B,  mult_B_c;
+   logic signed [31:0] mult_C,  mult_C_c;
+   logic signed [31:0] mult_D,  mult_D_c;
+
+   // Final computed outputs.
    logic signed [31:0] r, r_c;
    logic signed [31:0] i, i_c;
 
+   // Sequential block: update state and registers.
    always_ff @(posedge clock or posedge reset) begin
       if (reset) begin
-         state <= S0;
-         r   <= 32'sd0;
-         i   <= 32'sd0;
-         real_prev <= 32'sd0;
-         imag_prev <= 32'sd0;
+         state       <= S0;
+         r           <= 32'sd0;
+         i           <= 32'sd0;
+         real_prev   <= 32'sd0;
+         imag_prev   <= 32'sd0;
+         curr_A      <= 32'sd0;
+         curr_B      <= 32'sd0;
+         mult_A      <= 32'sd0;
+         mult_B      <= 32'sd0;
+         mult_C      <= 32'sd0;
+         mult_D      <= 32'sd0;
       end else begin
-         state <= state_c;
-         r   <= r_c;
-         i <= i_c;
-         real_prev <= real_prev_c;
-         imag_prev <= imag_prev_c;
+         state       <= state_c;
+         r           <= r_c;
+         i           <= i_c;
+         real_prev   <= real_prev_c;
+         imag_prev   <= imag_prev_c;
+         curr_A      <= curr_A_c;
+         curr_B      <= curr_B_c;
+         mult_A      <= mult_A_c;
+         mult_B      <= mult_B_c;
+         mult_C      <= mult_C_c;
+         mult_D      <= mult_D_c;
       end
    end
 
+   // Combinational block for next-state logic and computation.
    always_comb begin
-      inA_rd_en  = 1'b0;
-      inB_rd_en  = 1'b0;
-      out_wr_en  = 1'b0;
-      out_din    = 32'sd0;
+      // Default assignments for outputs.
+      inA_rd_en   = 1'b0;
+      inB_rd_en   = 1'b0;
+      out_wr_en   = 1'b0;
+      out_din     = 32'sd0;
       out2_wr_en  = 1'b0;
       out2_din    = 32'sd0;
 
-      state_c = state;
-      r_c   = r;
-      i_c   = i;
-      real_prev_c = real_prev;
-      imag_prev_c = imag_prev;
-      
+      // Default next-state assignments (hold current values).
+      state_c       = state;
+      r_c           = r;
+      i_c           = i;
+      real_prev_c   = real_prev;
+      imag_prev_c   = imag_prev;
+      curr_A_c      = curr_A;
+      curr_B_c      = curr_B;
+      mult_A_c      = mult_A;
+      mult_B_c      = mult_B;
+      mult_C_c      = mult_C;
+      mult_D_c      = mult_D;
+
       case (state)
          S0: begin
+            // When both inputs are available, read them.
             if (!inA_empty && !inB_empty) begin
                inA_rd_en = 1'b1;
                inB_rd_en = 1'b1;
-               r_c = GLOBALS::DEQUANTIZE_I(real_prev * inA_dout) - GLOBALS::DEQUANTIZE_I(-imag_prev * inB_dout);
-               i_c = GLOBALS::DEQUANTIZE_I(real_prev * inB_dout) + GLOBALS::DEQUANTIZE_I(-imag_prev * inA_dout);
-               real_prev_c = inA_dout;
-               imag_prev_c = inB_dout;
-               state_c = S1;
+               // Latch the new inputs into temporary registers.
+               curr_A_c = inA_dout;
+               curr_B_c = inB_dout;
+               // Do not update the "old" values yet; they will be used for multiplication.
+               state_c  = S1;
             end
          end
 
          S1: begin
+            // Perform the multiplications using the stored previous values and
+            // the newly latched inputs:
+            //   mult_A = real_prev   * curr_A
+            //   mult_B = -imag_prev  * curr_B
+            //   mult_C = real_prev   * curr_B
+            //   mult_D = -imag_prev  * curr_A
+            mult_A_c = real_prev * curr_A;
+            mult_B_c = -imag_prev * curr_B;
+            mult_C_c = real_prev * curr_B;
+            mult_D_c = -imag_prev * curr_A;
+            state_c  = S2;
+         end
+
+         S2: begin
+            // Perform dequantization and compute the final outputs:
+            //   r = DEQUANTIZE_I(mult_A) - DEQUANTIZE_I(mult_B)
+            //   i = DEQUANTIZE_I(mult_C) + DEQUANTIZE_I(mult_D)
+            r_c = GLOBALS::DEQUANTIZE_I(mult_A) - GLOBALS::DEQUANTIZE_I(mult_B);
+            i_c = GLOBALS::DEQUANTIZE_I(mult_C) + GLOBALS::DEQUANTIZE_I(mult_D);
+            // If both output FIFOs are ready, drive the outputs and update the stored previous values.
             if (!out_full && !out2_full) begin
-               out_din   = i;
-               out_wr_en = 1'b1;
-               out2_din = r;
+               out_din    = i;
+               out_wr_en  = 1'b1;
+               out2_din   = r;
                out2_wr_en = 1'b1;
+               // Update the previous values with the newly read inputs so that they are used in the next computation.
+               real_prev_c = curr_A;
+               imag_prev_c = curr_B;
                state_c = S0;
             end
          end
 
          default: begin
-            state_c = S0;
-            r_c   = 32'sd0;
-            i_c =  32'sd0;
-            real_prev_c = 32'sd0;
-            imag_prev_c = 32'sd0;
+            state_c       = S0;
+            r_c           = 32'sd0;
+            i_c           = 32'sd0;
+            real_prev_c   = 32'sd0;
+            imag_prev_c   = 32'sd0;
+            curr_A_c      = 32'sd0;
+            curr_B_c      = 32'sd0;
+            mult_A_c      = 32'sd0;
+            mult_B_c      = 32'sd0;
+            mult_C_c      = 32'sd0;
+            mult_D_c      = 32'sd0;
          end
       endcase
    end
+
 endmodule
+
 
 module demodulate_stage_2 (
     input  logic         clock,
@@ -247,52 +313,69 @@ module demodulate_stage_2 (
     output logic signed [31:0] out_din    
 );
 
-   typedef enum logic [0:0] {S0, S1} state_t;
+   // Change state encoding to 2 bits for three states.
+   typedef enum logic [1:0] {S0, S1, S2} state_t;
    state_t state, state_c;
 
-   logic signed [31:0] multiply, multiply_c;
+   // Intermediate registers:
+   // 'multiplied' holds the raw product from multiplication.
+   // 'mult_result' holds the dequantized result.
+   logic signed [31:0] multiplied, multiplied_c;
+   logic signed [31:0] mult_result, mult_result_c;
 
    always_ff @(posedge clock or posedge reset) begin
       if (reset) begin
-         state <= S0;
-         multiply   <= 32'sd0;
+         state       <= S0;
+         multiplied  <= 32'sd0;
+         mult_result <= 32'sd0;
       end else begin
-         state <= state_c;
-         multiply   <= multiply_c;
+         state       <= state_c;
+         multiplied  <= multiplied_c;
+         mult_result <= mult_result_c;
       end
    end
 
    always_comb begin
-      inA_rd_en  = 1'b0;
-      out_wr_en  = 1'b0;
-      out_din    = 32'sd0;
-
-      state_c = state;
-      multiply_c   = multiply;
+      // Default output and next-state assignments.
+      inA_rd_en       = 1'b0;
+      out_wr_en       = 1'b0;
+      out_din         = 32'sd0;
+      state_c         = state;
+      multiplied_c    = multiplied;
+      mult_result_c   = mult_result;
 
       case (state)
          S0: begin
+            // Read input when available.
             if (!inA_empty) begin
                inA_rd_en = 1'b1;
-               multiply_c = GLOBALS::DEQUANTIZE_I(GLOBALS::FM_DEMOD_GAIN * inA_dout);
+               // Multiply the gain with the input.
+               multiplied_c = GLOBALS::FM_DEMOD_GAIN * inA_dout;
                state_c = S1;
             end
          end
 
          S1: begin
+            // Dequantize the multiplication result.
+            mult_result_c = GLOBALS::DEQUANTIZE_I(multiplied);
+            state_c = S2;
+         end
+
+         S2: begin
+            // Write the dequantized result when output is available.
             if (!out_full) begin
-               out_din   = multiply;
+               out_din   = mult_result;
                out_wr_en = 1'b1;
                state_c = S0;
             end
          end
 
          default: begin
-            state_c = S0;
-            multiply_c   = 32'sd0;
+            state_c         = S0;
+            multiplied_c    = 32'sd0;
+            mult_result_c   = 32'sd0;
          end
       endcase
    end
 endmodule
-
 `endif

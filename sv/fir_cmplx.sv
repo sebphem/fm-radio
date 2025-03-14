@@ -1,13 +1,22 @@
 `ifndef _FIRCMPLX_
 `define _FIRCMPLX_
 `include "global.sv"
+(* syn_black_box *)
 module fir_cmplx #(
     parameter int DECIMATION = 1,     // Decimation factor (always 1 in this case)
     parameter int TAPS = 20,
     parameter int MULT_WIDTH = 32,
     parameter int DATA_WIDTH = 32,     // Data bit width
-    parameter logic signed [0:TAPS-1][DATA_WIDTH-1:0] h_real, // Real coefficients
-    parameter logic signed [0:TAPS-1][DATA_WIDTH-1:0] h_imag // Imaginary coefficients
+    parameter logic signed [0:TAPS-1][DATA_WIDTH-1:0] h_real = '{
+	32'h00000001, 32'h00000008, 32'hfffffff3, 32'h00000009, 32'h0000000b, 32'hffffffd3, 32'h00000045, 32'hffffffd3, 
+	32'hffffffb1, 32'h00000257, 32'h00000257, 32'hffffffb1, 32'hffffffd3, 32'h00000045, 32'hffffffd3, 32'h0000000b, 
+	32'h00000009, 32'hfffffff3, 32'h00000008, 32'h00000001
+}, // Real coefficients
+    parameter logic signed [0:TAPS-1][DATA_WIDTH-1:0] h_imag ='{
+	32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000, 
+	32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000, 
+	32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000
+}// Imaginary coefficients
 ) (
     input logic clk,
     input logic rst,
@@ -24,7 +33,6 @@ module fir_cmplx #(
     input logic y_real_full,
     input logic y_imag_full
 );
-
     // FSM State Definition
     typedef enum logic [3:0] {
         LOAD_SHIFT,    // Load new sample and shift register
