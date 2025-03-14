@@ -1,10 +1,10 @@
 module fir_cmplx #(
     parameter int DECIMATION = 1,     // Decimation factor (always 1 in this case)
-    parameter int TAPS = \20,
-    parameter int MULT_WIDTH = 64,
+    parameter int TAPS = 20,
+    parameter int MULT_WIDTH = 32,
+    parameter int DATA_WIDTH = 32,     // Data bit width
     parameter logic signed [0:TAPS-1][DATA_WIDTH-1:0] h_real, // Real coefficients
-    parameter logic signed [0:TAPS-1][DATA_WIDTH-1:0] h_imag, // Imaginary coefficients
-    parameter int DATA_WIDTH = 32     // Data bit width
+    parameter logic signed [0:TAPS-1][DATA_WIDTH-1:0] h_imag // Imaginary coefficients
 ) (
     input logic clk,
     input logic rst,

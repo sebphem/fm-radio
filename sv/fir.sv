@@ -1,7 +1,7 @@
 module fir #(
     parameter int DECIMATION = 2,     // Decimation factor
     parameter int TAPS = 32,
-    parameter int MULT_WIDTH = 64,
+    parameter int MULT_WIDTH = 32,
     parameter int DATA_WIDTH = 32,     // Data bit width
     parameter logic signed [0:TAPS-1][DATA_WIDTH-1:0] coeff = '{default: '{default: 0}} // Coefficients
 ) (

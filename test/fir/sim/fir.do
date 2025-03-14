@@ -6,7 +6,7 @@ vmap work work
 # add architecture
 vlog -work work "../../../sv/global.sv"
 vlog -work work "../../../sv/fifo.sv"
-vlog -work work "../../../sv/iir.sv"
+vlog -work work "../../../sv/fir.sv"
 vlog -work work "../tb.sv"
 
 # start basic simulation
@@ -19,7 +19,7 @@ add wave -noupdate -group /fir_tb/x_in_fifo
 add wave -noupdate -group /fir_tb/x_in_fifo -radix hexadecimal  /fir_tb/x_in_fifo/*
 
 
-add wave -noupdate -group /fir_tb/iir_inst
-add wave -noupdate -group /fir_tb/iir_inst -radix hexadecimal  /fir_tb/iir_inst/*
+add wave -noupdate -group /fir_tb/fir_inst
+add wave -noupdate -group /fir_tb/fir_inst -radix hexadecimal  /fir_tb/fir_inst/*
 
 #run -all

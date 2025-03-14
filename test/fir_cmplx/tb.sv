@@ -2,15 +2,15 @@
 
 module fir_cmplx_tb;
 
-localparam string X_REAL_IN_FILE = "../test/fir_cmplx/x_real_in.txt";
-localparam string X_IMAG_IN_FILE = "../test/fir_cmplx/x_imag_in.txt";
-localparam string Y_REAL_CMP_FILE = "../test/fir_cmplx/y_real_cmp.txt";
-localparam string Y_IMAG_CMP_FILE = "../test/fir_cmplx/y_imag_cmp.txt";
-localparam string Y_REAL_OUT_FILE = "../test/fir_cmplx/y_real_out.txt";
-localparam string Y_IMAG_OUT_FILE = "../test/fir_cmplx/y_imag_out.txt";
+localparam string X_REAL_IN_FILE = "../x_real_in.txt";
+localparam string X_IMAG_IN_FILE = "../x_imag_in.txt";
+localparam string Y_REAL_CMP_FILE = "../y_real_cmp.txt";
+localparam string Y_IMAG_CMP_FILE = "../y_imag_cmp.txt";
+localparam string Y_REAL_OUT_FILE = "../y_real_out.txt";
+localparam string Y_IMAG_OUT_FILE = "../y_imag_out.txt";
 
 localparam CLOCK_PERIOD = 10;
-localparam TAPS = 20; // Example TAPS
+localparam TAPS = 20;
 localparam DATA_WIDTH = 32;
 
 logic clock = 1'b1;
@@ -49,9 +49,16 @@ logic out_read_done = '0;
 integer out_real_errors = '0;
 integer out_imag_errors = '0;
 
-parameter logic signed [0:TAPS-1][DATA_WIDTH-1:0] h_real = '{20{32'h0}}; // Example coefficients (all 0)
-parameter logic signed [0:TAPS-1][DATA_WIDTH-1:0] h_imag = '{20{32'h0}}; // Example coefficients (all 0)
-
+parameter logic signed [0:TAPS-1][DATA_WIDTH-1:0] h_real = '{
+	32'h00000001, 32'h00000008, 32'hfffffff3, 32'h00000009, 32'h0000000b, 32'hffffffd3, 32'h00000045, 32'hffffffd3, 
+	32'hffffffb1, 32'h00000257, 32'h00000257, 32'hffffffb1, 32'hffffffd3, 32'h00000045, 32'hffffffd3, 32'h0000000b, 
+	32'h00000009, 32'hfffffff3, 32'h00000008, 32'h00000001
+};
+parameter logic signed [0:TAPS-1][DATA_WIDTH-1:0] h_imag = '{
+	32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000, 
+	32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000, 
+	32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000
+};
 fifo #(
     .FIFO_BUFFER_SIZE(512),
     .FIFO_DATA_WIDTH(DATA_WIDTH)
