@@ -3,7 +3,7 @@
 
 module read_iq_tb;
 
-localparam string A_IN  = "../a.txt";
+localparam string A_IN  = "../a.bin";
 localparam string CMP_IN = "../cmpI.txt";
 localparam string CMP_IN2 = "../cmpQ.txt";
 localparam string OUT_NAME = "../outI.txt";
@@ -168,8 +168,8 @@ initial begin : img_read_process
         @(negedge clock);
         a_in_wr_en = 1'b0;
         if(!a_in_full) begin
-            r = $fscanf(a_file, "%u\n", a_in);
-            $display("feeding %u", a_in);
+            r = $fread(a_file, A_IN, 4);
+            $display("feeding %b", a_in);
             a_in_wr_en = 1'b1;
         end
     end
