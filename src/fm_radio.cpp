@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <cstdint>
 
 #include "fm_radio.h"
 
@@ -105,19 +106,29 @@ void fm_radio_stereo(unsigned char *IQ, int *left_audio, int *right_audio)
 void read_IQ( unsigned char *IQ, int *I, int *Q, int samples )
 {
     int i = 0;
+    FILE *fp1 = fopen("../test/readIQ/a.txt", "a");
+    FILE *fp2 = fopen("../test/readIQ/cmpI.txt", "a");
+    FILE *fp3 = fopen("../test/readIQ/cmpQ.txt", "a");
     for ( i = 0; i < samples; i++ )
     {
+        // write 32 bit value(IQ[i*4+0]:IQ[i*4+3]) to fp1
+        fwrite(&IQ[i*4], sizeof(char), 4, fp1);
         I[i] = QUANTIZE_I((short)(IQ[i*4+1] << 8) | (short)IQ[i*4+0]);
         Q[i] = QUANTIZE_I((short)(IQ[i*4+3] << 8) | (short)IQ[i*4+2]);
+        fprintf(fp2, "%d\n", I[i]);
+        fprintf(fp3, "%d\n", Q[i]);
     }
+    fclose(fp1);
+    fclose(fp2);
+    fclose(fp3);
 }
 
 void demodulate_n( int *real, int *imag, int *real_prev, int *imag_prev, const int n_samples, const int gain, int *demod_out )
 {
     int i = 0;
-    FILE *fp1 = fopen("../test/demodulate/a.txt", "w");
-    FILE *fp2 = fopen("../test/demodulate/b.txt", "w");
-    FILE *fp3 = fopen("../test/demodulate/cmp.txt", "w");
+    FILE *fp1 = fopen("../test/demodulate/a.txt", "a");
+    FILE *fp2 = fopen("../test/demodulate/b.txt", "a");
+    FILE *fp3 = fopen("../test/demodulate/cmp.txt", "a");
     for ( i = 0; i < n_samples; i++ )
     {
         fprintf(fp1, "%d\n", real[i]);
@@ -125,6 +136,9 @@ void demodulate_n( int *real, int *imag, int *real_prev, int *imag_prev, const i
         demodulate( real[i], imag[i], real_prev, imag_prev, gain, &demod_out[i] );
         fprintf(fp3, "%d\n", demod_out[i]);
     }
+    fclose(fp1);
+    fclose(fp2);
+    fclose(fp3);
 }
 
 
@@ -134,13 +148,21 @@ void demodulate( int real, int imag, int *real_prev, int *imag_prev, const int g
     int r = DEQUANTIZE(*real_prev * real) - DEQUANTIZE(-*imag_prev * imag);
     int i = DEQUANTIZE(*real_prev * imag) + DEQUANTIZE(-*imag_prev * real);
     
-    FILE *fp_tan1 = fopen("../test/qarctan/a.txt", "w");
-    FILE *fp_tan2 = fopen("../test/qarctan/b.txt", "w");
-    FILE *fp_tan3 = fopen("../test/qarctan/cmp.txt", "w");
+    FILE *fp_tan1 = fopen("../test/qarctan/a.txt", "a");
+    FILE *fp_tan2 = fopen("../test/qarctan/b.txt", "a");
+    FILE *fp_tan3 = fopen("../test/qarctan/cmp.txt", "a");
+    if(!fp_tan1 || !fp_tan2 || !fp_tan3)
+    {
+        printf("Error opening file\n");
+        exit(1);
+    }
     fprintf(fp_tan1, "%d\n", i);
     fprintf(fp_tan2, "%d\n", r);
     *demod_out = DEQUANTIZE(gain * qarctan(i, r));
     fprintf(fp_tan3, "%d\n", qarctan(i,r));
+    fclose(fp_tan1);
+    fclose(fp_tan2);
+    fclose(fp_tan3);
     // update the previous values
     *real_prev = real;
     *imag_prev = imag;
@@ -287,9 +309,9 @@ void fir_cmplx( int *x_real_in, int *x_imag_in, const int *h_real, const int *h_
 void multiply_n( int *x_in, int *y_in, const int n_samples, int *output )
 {
     int i = 0;
-    FILE *fp1 = fopen("../test/multiply/a.txt", "w");
-    FILE *fp2 = fopen("../test/multiply/b.txt", "w");
-    FILE *fp3 = fopen("../test/multiply/cmp.txt", "w");
+    FILE *fp1 = fopen("../test/multiply/a.txt", "a");
+    FILE *fp2 = fopen("../test/multiply/b.txt", "a");
+    FILE *fp3 = fopen("../test/multiply/cmp.txt", "a");
     for ( i = 0; i < n_samples; i++ )
     {
         fprintf(fp1, "%d\n", x_in[i]);
@@ -297,15 +319,18 @@ void multiply_n( int *x_in, int *y_in, const int n_samples, int *output )
         output[i] = DEQUANTIZE( x_in[i] * y_in[i] );
         fprintf(fp3, "%d\n", output[i]);
     }
+    fclose(fp1);
+    fclose(fp2);
+    fclose(fp3);
 }
 
 
 void add_n( int *x_in, int *y_in, const int n_samples, int *output )
 {
     int i = 0;
-    FILE *fp1 = fopen("../test/add/a.txt", "w");
-    FILE *fp2 = fopen("../test/add/b.txt", "w");
-    FILE *fp3 = fopen("../test/add/cmp.txt", "w");
+    FILE *fp1 = fopen("../test/add/a.txt", "a");
+    FILE *fp2 = fopen("../test/add/b.txt", "a");
+    FILE *fp3 = fopen("../test/add/cmp.txt", "a");
     for ( i = 0; i < n_samples; i++ )
     {
         fprintf(fp1, "%d\n", x_in[i]);
@@ -313,14 +338,17 @@ void add_n( int *x_in, int *y_in, const int n_samples, int *output )
         output[i] = x_in[i] + y_in[i];
         fprintf(fp3, "%d\n", output[i]);
     }
+    fclose(fp1);
+    fclose(fp2);
+    fclose(fp3);
 }
 
 void sub_n( int *x_in, int *y_in, const int n_samples, int *output )
 {
     int i = 0;
-    FILE *fp1 = fopen("../test/sub/a.txt", "w");
-    FILE *fp2 = fopen("../test/sub/b.txt", "w");
-    FILE *fp3 = fopen("../test/sub/cmp.txt", "w");
+    FILE *fp1 = fopen("../test/sub/a.txt", "a");
+    FILE *fp2 = fopen("../test/sub/b.txt", "a");
+    FILE *fp3 = fopen("../test/sub/cmp.txt", "a");
     for ( i = 0; i < n_samples; i++ )
     {
         fprintf(fp1, "%d\n", x_in[i]);
@@ -328,19 +356,24 @@ void sub_n( int *x_in, int *y_in, const int n_samples, int *output )
         output[i] = x_in[i] - y_in[i];
         fprintf(fp3, "%d\n", output[i]);
     }
+    fclose(fp1);
+    fclose(fp2);
+    fclose(fp3);
 }
 
 void gain_n( int *input, const int n_samples, int gain, int *output )
 {
     int i = 0;
-    FILE *fp1 = fopen("../test/gain/a.txt", "w");
-    FILE *fp2 = fopen("../test/gain/cmp.txt", "w");
+    FILE *fp1 = fopen("../test/gain/a.txt", "a");
+    FILE *fp2 = fopen("../test/gain/cmp.txt", "a");
     for ( i = 0; i < n_samples; i++ )
     {
         fprintf(fp1, "%d\n", input[i]);
         output[i] = DEQUANTIZE(input[i] * gain) << (14-BITS);
         fprintf(fp2, "%d\n", output[i]);
     }
+    fclose(fp1);
+    fclose(fp2);
 }
 
 int qarctan(int y, int x)
@@ -353,9 +386,9 @@ int qarctan(int y, int x)
     int angle = 0; 
     int r = 0;
 
-    FILE *fp1 = fopen("../test/divide/a.txt", "w");
-    FILE *fp2 = fopen("../test/divide/b.txt", "w");
-    FILE *fp3 = fopen("../test/divide/cmp.txt", "w");
+    FILE *fp1 = fopen("../test/divide/a.txt", "a");
+    FILE *fp2 = fopen("../test/divide/b.txt", "a");
+    FILE *fp3 = fopen("../test/divide/cmp.txt", "a");
 
     if ( x >= 0 ) 
     {
@@ -373,7 +406,9 @@ int qarctan(int y, int x)
         fprintf(fp3, "%d\n", r);
         angle = quad3 - DEQUANTIZE(quad1 * r);
     }
-
+    fclose(fp1);
+    fclose(fp2);
+    fclose(fp3);
     return ((y < 0) ? -angle : angle);     // negate if in quad III or IV
 }
 
