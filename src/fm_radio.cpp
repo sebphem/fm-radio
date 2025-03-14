@@ -112,7 +112,7 @@ void read_IQ( unsigned char *IQ, int *I, int *Q, int samples )
     for ( i = 0; i < samples; i++ )
     {
         // write 64 bit value(IQ[i*4+0]:IQ[i*4+3]) to fp1
-        fprintf(fp1, "%d\n", ((uint64_t*)(&IQ[i*4]))[0]);
+        fprintf(fp1, "%ld\n", ((uint64_t*)(&IQ[i*4]))[0]);
         I[i] = QUANTIZE_I((short)(IQ[i*4+1] << 8) | (short)IQ[i*4+0]);
         Q[i] = QUANTIZE_I((short)(IQ[i*4+3] << 8) | (short)IQ[i*4+2]);
         fprintf(fp2, "%d\n", I[i]);
