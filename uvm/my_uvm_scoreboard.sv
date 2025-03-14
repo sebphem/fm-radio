@@ -44,19 +44,24 @@ class my_uvm_scoreboard extends uvm_scoreboard;
             comparison();
         end
     endtask: run
-
+    int left_line = 0;
+    int right_line = 0;
     virtual function void comparison();
-        `uvm_info("SB_CMP", $sformatf("tx cmp l+r: %d %d tx out L+r: %d, %d", tx_cmp.l_out, tx_cmp.r_out, tx_out.l_out,tx_out.r_out),UVM_LOW);
+        
         if (tx_out.l_out != tx_cmp.l_out) begin
+            left_line += 1;
             `uvm_info("SB_CMP", tx_out.sprint(), UVM_LOW);
             `uvm_info("SB_CMP", tx_cmp.sprint(), UVM_LOW);
             `uvm_error("SB_CMP", $sformatf("Test Failed on Left Audio\nExpecting: %d, Received: %d", tx_cmp.l_out, tx_out.l_out));
+            `uvm_info("SB_CMP", $sformatf("index cmp %d index out %d left line %d tx cmp l+r: %x %x tx out L+r: %x, %x", tx_cmp.index, tx_out.index, left_line, tx_cmp.l_out, tx_cmp.r_out, tx_out.l_out,tx_out.r_out),UVM_LOW);
         end
 
         if (tx_out.r_out != tx_cmp.r_out) begin
+            right_line += 1;
             `uvm_info("SB_CMP", tx_out.sprint(), UVM_LOW);
             `uvm_info("SB_CMP", tx_cmp.sprint(), UVM_LOW);
             `uvm_error("SB_CMP", $sformatf("Test Failed on Right Audio\nExpecting: %d, Received: %d", tx_cmp.r_out, tx_out.r_out));
+            `uvm_info("SB_CMP", $sformatf("index cmp %d index out %d right line %d tx cmp l+r: %x %x tx out L+r: %x, %x", tx_cmp.index, tx_out.index, right_line, tx_cmp.l_out, tx_cmp.r_out, tx_out.l_out,tx_out.r_out),UVM_LOW);
         end
     endfunction: comparison
 endclass: my_uvm_scoreboard

@@ -43,10 +43,10 @@ class my_uvm_monitor_output extends uvm_monitor;
             @(negedge vif.clock)
             begin
                 if ((vif.out_empty_right == 1'b0) && (vif.out_empty_left == 1'b0)) begin
-                    $fwrite(r_audio_out_file, "%c", vif.radio_out_right);
+                    $fwrite(r_audio_out_file, "%d\n", vif.radio_out_right);
                     tx_out.l_out = vif.radio_out_right;
 
-                    $fwrite(l_audio_out_file, "%c", vif.radio_out_left);
+                    $fwrite(l_audio_out_file, "%d\n", vif.radio_out_left);
                     tx_out.r_out = vif.radio_out_left;
 
                     mon_ap_output.write(tx_out);

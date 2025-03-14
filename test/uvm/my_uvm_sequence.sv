@@ -49,14 +49,11 @@ class my_uvm_sequence extends uvm_sequence#(input_uvm_transaction);
             `uvm_fatal("SEQ_RUN", $sformatf("Failed to open file %s...", DATA_IN_NAME));
         end
 
-        while ( !$feof(in_file) && i < F_ELEMS ) begin
+        while ( !$feof(in_file)) begin
             tx = input_uvm_transaction::type_id::create(.name("tx"), .contxt(get_full_name()));
             start_item(tx);
             n_bytes = $fread(d_in, in_file, i, BYTES_PER_ELEMENT);
 
-
-            //rev endianness
-            // tx.iq = '{d_in[7:0],d_in[15:8],d_in[23:16],d_in[31:24]};
             tx.iq = d_in;
             `uvm_info("SEQ_RUN", tx.sprint(), UVM_LOW);
             finish_item(tx);

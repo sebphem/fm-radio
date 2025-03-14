@@ -10,9 +10,9 @@ module my_uvm_tb;
 my_uvm_if vif();
 
    fm_radio fm_radio_instance (
-    .clock(clock),
-    .reset(reset),
-    .iq_sample_wr_en(iq_sample_wr_en),
+    .clock(vif.clock),
+    .reset(vif.reset),
+    .iq_sample_wr_en(vif.),
     .iq_sample(iq_sample),
     .iq_sample_full(iq_sample_full),
     .left_audio_out_rd_en(left_audio_out_rd_en),
