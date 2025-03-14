@@ -1,4 +1,5 @@
 fm_radio
+src/fm_radio.exe
 test/*/sim/*
 !test/*/sim/*.do
 test/usrp.dat
