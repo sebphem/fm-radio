@@ -210,9 +210,9 @@ module demodulate_stage_1 (
 
          S1: begin
             if (!out_full && !out2_full) begin
-               out_din   = r;
+               out_din   = i;
                out_wr_en = 1'b1;
-               out2_din = i;
+               out2_din = r;
                out2_wr_en = 1'b1;
                state_c = S0;
             end
@@ -269,7 +269,6 @@ module demodulate_stage_2 (
          S0: begin
             if (!inA_empty) begin
                inA_rd_en = 1'b1;
-               //*demod_out = DEQUANTIZE(gain * qarctan(i, r));
                multiply_c = GLOBALS::DEQUANTIZE_I(GLOBALS::FM_DEMOD_GAIN * inA_dout);
                state_c = S1;
             end
