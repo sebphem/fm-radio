@@ -7,7 +7,7 @@ localparam string CMP_IN   = "../cmp.txt";
 localparam string OUT_NAME = "../out.txt";
 
 localparam CLOCK_PERIOD = 10;
-localparam DECIMATION = 8;
+localparam DECIMATION = 1;
 localparam TAPS = 32;
 localparam DATA_WIDTH = 32;
 
@@ -35,10 +35,10 @@ logic out_read_done = '0;
 integer out_errors = '0;
 
 parameter logic signed [0:TAPS-1][DATA_WIDTH-1:0] coeff = '{
-    32'hFFFFFFFD, 32'hFFFFFFFA, 32'hFFFFFFF4, 32'hFFFFFFED, 32'hFFFFFFE5, 32'hFFFFFFDF, 32'hFFFFFFE2, 32'hFFFFFFF3,
-    32'h00000015, 32'h0000004E, 32'h0000009B, 32'h000000F9, 32'h0000015D, 32'h000001BE, 32'h0000020E, 32'h00000243,
-    32'h00000243, 32'h0000020E, 32'h000001BE, 32'h0000015D, 32'h000000F9, 32'h0000009B, 32'h0000004E, 32'h00000015,
-    32'hFFFFFFF3, 32'hFFFFFFE2, 32'hFFFFFFDF, 32'hFFFFFFE5, 32'hFFFFFFED, 32'hFFFFFFF4, 32'hFFFFFFFA, 32'hFFFFFFFD
+    32'h00000000, 32'h00000000, 32'hfffffffc, 32'hfffffff9, 32'hfffffffe, 32'h00000008, 32'h0000000c, 32'h00000002, 
+    32'h00000003, 32'h0000001e, 32'h00000030, 32'hfffffffc, 32'hffffff8c, 32'hffffff58, 32'hffffffc3, 32'h0000008a, 
+    32'h0000008a, 32'hffffffc3, 32'hffffff58, 32'hffffff8c, 32'hfffffffc, 32'h00000030, 32'h0000001e, 32'h00000003, 
+    32'h00000002, 32'h0000000c, 32'h00000008, 32'hfffffffe, 32'hfffffff9, 32'hfffffffc, 32'h00000000, 32'h00000000
 };
 
 fifo #(
