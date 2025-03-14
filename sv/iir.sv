@@ -1,3 +1,6 @@
+`ifndef _IIR_
+`define _IIR_
+`include "global.sv"
 // also called the deemphasis module
 module iir #(
     parameter DATA_WIDTH = 32        // Bit-DATA_WIDTH of input/output
@@ -87,3 +90,4 @@ module iir #(
         endcase
     end
 endmodule
+`endif

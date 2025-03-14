@@ -1,4 +1,6 @@
-
+`ifndef _FIFO_
+`define _FIFO_
+`include "global.sv"
 module fifo #(
     parameter FIFO_DATA_WIDTH = 32,
     parameter FIFO_BUFFER_SIZE = 1024) 
@@ -76,3 +78,4 @@ module fifo #(
     assign full = full_t;
 
 endmodule
+`endif

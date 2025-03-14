@@ -1,3 +1,6 @@
+`ifndef _MULTIPLY_
+`define _MULTIPLY_
+`include "global.sv"
 module multiply_two_inputs (
     input  logic         clock,
     input  logic         reset,
@@ -64,3 +67,4 @@ module multiply_two_inputs (
       endcase
    end
 endmodule
+`endif

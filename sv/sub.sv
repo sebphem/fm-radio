@@ -1,3 +1,7 @@
+`ifndef _SUB_
+`define _SUB_
+
+`include "global.sv"
 module sub_two_inputs (
     input  logic         clock,
     input  logic         reset,
@@ -66,3 +70,4 @@ module sub_two_inputs (
       endcase
    end
 endmodule
+`endif

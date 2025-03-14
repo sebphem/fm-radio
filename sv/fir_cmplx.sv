@@ -1,3 +1,6 @@
+`ifndef _FIRCMPLX_
+`define _FIRCMPLX_
+`include "global.sv"
 module fir_cmplx #(
     parameter int DECIMATION = 1,     // Decimation factor (always 1 in this case)
     parameter int TAPS = 20,
@@ -164,3 +167,4 @@ module fir_cmplx #(
     end
 
 endmodule
+`endif

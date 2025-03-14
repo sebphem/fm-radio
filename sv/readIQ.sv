@@ -1,3 +1,6 @@
+`ifndef _READIQ_
+`define _READIQ_
+`include "global.sv"
 module read_iq (
     input  logic         clock,
     input  logic         reset,
@@ -102,8 +105,6 @@ module read_iq (
 
                out_din_2   = Q;
                out_wr_en_2 = 1'b1;
-               $display("writing out i=%d", I);
-               $display("writing out q=%d", Q);
                state_c = S0;
             end
          end
@@ -117,3 +118,4 @@ module read_iq (
       endcase
    end
 endmodule
+`endif

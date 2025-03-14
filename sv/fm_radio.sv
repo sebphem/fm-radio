@@ -1,3 +1,17 @@
+`ifndef _FMRADIO_
+`define _FMRADIO_
+
+`include "global.sv"
+`include "add.sv"
+`include "sub.sv"
+`include "multiply.sv"
+`include "qarctan.sv"
+`include "demodulate.sv"
+`include "fir.sv"
+`include "fir_cmplx.sv"
+`include "readIQ.sv"
+`include "gain.sv"
+`include "iir.sv"
 
 module fm_radio (
     input  logic         clock,
@@ -67,7 +81,7 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
 
     // IQ sample FIFO
     fifo#(
-        .FIFO_BUFFER_SIZE(256),
+        .FIFO_BUFFER_SIZE(16),
         .FIFO_DATA_WIDTH(32)
     ) iq_sample_fifo (
         .reset(reset),
@@ -96,7 +110,7 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
     logic signed [31:0] iq_sample_q;
 
     fifo#(
-        .FIFO_BUFFER_SIZE(256),
+        .FIFO_BUFFER_SIZE(16),
         .FIFO_DATA_WIDTH(32)
     ) i_fifo (
         .reset(reset),
@@ -111,7 +125,7 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
     );
 
     fifo#(
-        .FIFO_BUFFER_SIZE(256),
+        .FIFO_BUFFER_SIZE(16),
         .FIFO_DATA_WIDTH(32)
     ) q_fifo (
         .reset(reset),
@@ -157,7 +171,7 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
     logic fir_out_i_rd_en;
     logic fir_out_q_rd_en;
     fifo#(
-        .FIFO_BUFFER_SIZE(256),
+        .FIFO_BUFFER_SIZE(16),
         .FIFO_DATA_WIDTH(32)
     ) fir_i_fifo (
         .reset(reset),
@@ -170,8 +184,8 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
         .dout(cmplx_fir_out_i),
         .empty(fir_out_i_empty)
     );
-    fifo#(
-        .FIFO_BUFFER_SIZE(256),
+    fifo #(
+        .FIFO_BUFFER_SIZE(16),
         .FIFO_DATA_WIDTH(32)
     ) fir_q_fifo (
         .reset(reset),
@@ -184,12 +198,12 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
         .dout(cmplx_fir_out_q),
         .empty(fir_out_q_empty)
     );
-    fir_cmplx fir_cmplx_inst #(
+    fir_cmplx  #(
         .TAPS(TAPS),
         .h_real(h_real),
         .h_imag(h_imag),
         .DATA_WIDTH(DATA_WIDTH)
-    )(
+    ) fir_cmplx_inst(
         .clk(clock),
         .rst(reset),
         .x_real_rd_en(read_iq_out_i_rd_en),
@@ -239,7 +253,7 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
     assign demod_out_empty = demod_out_empty1 && demod_out_empty2 && demod_out_empty3;
     assign demod_out_full = demod_out_full1 || demod_out_full2 || demod_out_full3;
     
-    demodulate demodulate_inst (
+    demodulate_two_inputs demodulate_inst (
         .clock(clock),
         .reset(reset),
         .inA_rd_en(fir_out_i_rd_en),
@@ -253,7 +267,7 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
         .out_din(demod_out)
     );
     fifo#(
-        .FIFO_BUFFER_SIZE(256),
+        .FIFO_BUFFER_SIZE(16),
         .FIFO_DATA_WIDTH(32)
     ) demod_out_fifo1 (
         .reset(reset),
@@ -267,7 +281,7 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
         .empty(demod_out_empty1)
     );
     fifo#(
-        .FIFO_BUFFER_SIZE(256),
+        .FIFO_BUFFER_SIZE(16),
         .FIFO_DATA_WIDTH(32)
     ) demod_out_fifo2 (
         .reset(reset),
@@ -281,7 +295,7 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
         .empty(demod_out_empty2)
     );
     fifo#(
-        .FIFO_BUFFER_SIZE(256),
+        .FIFO_BUFFER_SIZE(16),
         .FIFO_DATA_WIDTH(32)
     ) demod_out_fifo3 (
         .reset(reset),
@@ -321,26 +335,23 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
     assign bp_pilot_out_wr_en_2 = bp_pilot_out_wr_en;
     assign bp_pilot_out_empty = bp_pilot_out_empty_1 && bp_pilot_out_empty_2;
     assign bp_pilot_out_full = bp_pilot_out_full_1 || bp_pilot_out_full_2;
-
     fir #(
         .DECIMATION(1),
         .TAPS(32),
         .coeff(BP_PILOT_COEFFS),
         .DATA_WIDTH(DATA_WIDTH)
-    ) bp_pilot_fir(
-        .clock(clock),
-        .reset(reset),
-        .in_rd_en(demod_out_rd_en3),      
-        .in_empty(demod_out_empty3),      
-        .in_dout(demod_out_dout3), 
-
-        .out_wr_en(bp_pilot_out_wr_en),     
-        .out_full(bp_pilot_out_full),       
-        .out_din(bp_pilot_out)
+    ) bp_pilot_fir (
+        .clk(clock),
+        .rst(reset),
+        .x_in_rd_en(demod_out_rd_en3),
+        .x_in_empty(demod_out_empty3),
+        .x_in(demod_out_dout3),
+        .y_out(bp_pilot_out),
+        .y_out_wr_en(bp_pilot_out_wr_en),
+        .y_out_full(bp_pilot_out_full)
     );
-    
     fifo#(
-        .FIFO_BUFFER_SIZE(256),
+        .FIFO_BUFFER_SIZE(16),
         .FIFO_DATA_WIDTH(32)
     ) bp_pilot_out_fifo1 (
         .reset(reset),
@@ -354,7 +365,7 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
         .empty(bp_pilot_out_empty_1)
     );
     fifo#(
-        .FIFO_BUFFER_SIZE(256),
+        .FIFO_BUFFER_SIZE(16),
         .FIFO_DATA_WIDTH(32)
     ) bp_pilot_out_fifo2 (
         .reset(reset),
@@ -377,7 +388,7 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
     logic multiply_out_rd_en;
     logic signed [31:0] multiply_out_dout;
     fifo #(
-        .FIFO_BUFFER_SIZE(256),
+        .FIFO_BUFFER_SIZE(16),
         .FIFO_DATA_WIDTH(32)
     ) multiply_out_fifo (
         .reset(reset),
@@ -390,7 +401,7 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
         .dout(multiply_out_dout),
         .empty(multiply_out_empty)
     );
-    multiply multiply_inst (
+    multiply_two_inputs multiply_inst (
         .clock(clock),
         .reset(reset),
         .inA_rd_en(bp_pilot_out_rd_en_1),      
@@ -417,7 +428,7 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
     logic signed [31:0] hp_pilot_out_dout;
 
     fifo #(
-        .FIFO_BUFFER_SIZE(256),
+        .FIFO_BUFFER_SIZE(16),
         .FIFO_DATA_WIDTH(32)
     ) hp_pilot_out_fifo (
         .reset(reset),
@@ -430,24 +441,21 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
         .dout(hp_pilot_out_dout),
         .empty(hp_pilot_out_empty)
     );
-
     fir #(
         .DECIMATION(1),
         .TAPS(32),
         .coeff(HP_COEFFS),
         .DATA_WIDTH(DATA_WIDTH)
     ) hp_pilot_fir (
-        .clock(clock),
-        .reset(reset),
-        .in_rd_en(multiply_out_rd_en),      
-        .in_empty(multiply_out_empty),      
-        .in_dout(multiply_out_dout), 
-
-        .out_wr_en(hp_pilot_out_wr_en),     
-        .out_full(hp_pilot_out_full),       
-        .out_din(hp_pilot_out)
+        .clk(clock),
+        .rst(reset),
+        .x_in_rd_en(multiply_out_rd_en),
+        .x_in_empty(multiply_out_empty),
+        .x_in(multiply_out_dout),
+        .y_out(hp_pilot_out),
+        .y_out_wr_en(hp_pilot_out_wr_en),
+        .y_out_full(hp_pilot_out_full)
     );
-
     // bp_lmr_filter
     // 1 int32 -> 1 int32
     logic signed [31:0] bp_lmr_out;
@@ -458,7 +466,7 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
     logic signed [31:0] bp_lmr_out_dout;
 
     fifo #(
-        .FIFO_BUFFER_SIZE(256),
+        .FIFO_BUFFER_SIZE(16),
         .FIFO_DATA_WIDTH(32)
     ) bp_lmr_out_fifo (
         .reset(reset),
@@ -478,14 +486,14 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
         .coeff(BP_LMR_COEFFS),
         .DATA_WIDTH(DATA_WIDTH)
     ) bp_lmr_fir (
-        .clock(clock),
-        .reset(reset),
-        .in_rd_en(demod_out_rd_en1),      
-        .in_empty(demod_out_empty1),      
-        .in_dout(demod_out_dout1), 
-        .out_wr_en(bp_lmr_out_wr_en),     
-        .out_full(bp_lmr_out_full),       
-        .out_din(bp_lmr_out)
+        .clk(clock),
+        .rst(reset),
+        .x_in_rd_en(demod_out_rd_en1),
+        .x_in_empty(demod_out_empty1),
+        .x_in(demod_out_dout1),
+        .y_out(bp_lmr_out),
+        .y_out_wr_en(bp_lmr_out_wr_en),
+        .y_out_full(bp_lmr_out_full)
     );
 
     // multiply hp_pilot and bp_lmr
@@ -497,7 +505,7 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
     logic multiply_out2_rd_en;
     logic signed [31:0] multiply_out2_dout;
     fifo #(
-        .FIFO_BUFFER_SIZE(256),
+        .FIFO_BUFFER_SIZE(16),
         .FIFO_DATA_WIDTH(32)
     ) multiply_out2_fifo (
         .reset(reset),
@@ -510,7 +518,7 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
         .dout(multiply_out2_dout),
         .empty(multiply_out2_empty)
     );
-    multiply multiply_inst2 (
+    multiply_two_inputs multiply_inst2 (
         .clock(clock),
         .reset(reset),
         .inA_rd_en(hp_pilot_out_rd_en),      
@@ -550,7 +558,7 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
     logic signed [31:0] audio_lmr_out_dout2;
 
     fifo #(
-        .FIFO_BUFFER_SIZE(256),
+        .FIFO_BUFFER_SIZE(16),
         .FIFO_DATA_WIDTH(32)
     ) audio_lmr_out_fifo1 (
         .reset(reset),
@@ -564,7 +572,7 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
         .empty(audio_lmr_out_empty1)
     );
     fifo #(
-        .FIFO_BUFFER_SIZE(256),
+        .FIFO_BUFFER_SIZE(16),
         .FIFO_DATA_WIDTH(32)
     ) audio_lmr_out_fifo2 (
         .reset(reset),
@@ -584,15 +592,16 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
         .coeff(AUDIO_LMR_COEFFS),
         .DATA_WIDTH(DATA_WIDTH)
     ) audio_lmr_fir (
-        .clock(clock),
-        .reset(reset),
-        .in_rd_en(multiply_out2_rd_en),      
-        .in_empty(multiply_out2_empty),      
-        .in_dout(multiply_out2_dout), 
-        .out_wr_en(audio_lmr_out_wr_en),     
-        .out_full(audio_lmr_out_full),       
-        .out_din(audio_lmr_out)
+        .clk(clock),
+        .rst(reset),
+        .x_in_rd_en(multiply_out2_rd_en),
+        .x_in_empty(multiply_out2_empty),
+        .x_in(multiply_out2_dout),
+        .y_out_wr_en(audio_lmr_out_wr_en),
+        .y_out_full(audio_lmr_out_full),
+        .y_out(audio_lmr_out)
     );
+
 
     // audio_lpr_filter
     // 1 int32 -> 1 int32 -> 2 int32 (copied)
@@ -616,7 +625,7 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
     logic signed [31:0] audio_lpr_out_dout1;
     logic signed [31:0] audio_lpr_out_dout2;
     fifo #(
-        .FIFO_BUFFER_SIZE(256),
+        .FIFO_BUFFER_SIZE(16),
         .FIFO_DATA_WIDTH(32)
     ) audio_lpr_out_fifo1 (
         .reset(reset),
@@ -630,7 +639,7 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
         .empty(audio_lpr_out_empty1)
     );
     fifo #(
-        .FIFO_BUFFER_SIZE(256),
+        .FIFO_BUFFER_SIZE(16),
         .FIFO_DATA_WIDTH(32)
     ) audio_lpr_out_fifo2 (
         .reset(reset),
@@ -643,20 +652,21 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
         .dout(audio_lpr_out_dout2),
         .empty(audio_lpr_out_empty2)
     );
+
     fir #(
         .DECIMATION(8),
         .TAPS(32),
         .coeff(AUDIO_LPR_COEFFS),
         .DATA_WIDTH(DATA_WIDTH)
     ) audio_lpr_fir (
-        .clock(clock),
-        .reset(reset),
-        .in_rd_en(demod_out_rd_en2),      
-        .in_empty(demod_out_empty2),   
-        .in_dout(demod_out_dout2),
-        .out_wr_en(audio_lpr_out_wr_en),     
-        .out_full(audio_lpr_out_full),       
-        .out_din(audio_lpr_out)
+        .clk(clock),
+        .rst(reset),
+        .x_in_rd_en(demod_out_rd_en2),
+        .x_in_empty(demod_out_empty2),
+        .x_in(demod_out_dout2),
+        .y_out_wr_en(audio_lpr_out_wr_en),
+        .y_out_full(audio_lpr_out_full),
+        .y_out(audio_lpr_out)
     );
 
     // add audio_lpr_filter FIFO 1 and audio_lmr_filter FIFO 1
@@ -670,7 +680,7 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
     
 
     fifo #(
-        .FIFO_BUFFER_SIZE(256),
+        .FIFO_BUFFER_SIZE(16),
         .FIFO_DATA_WIDTH(32)
     ) left_audio_filtered_fifo (
         .reset(reset),
@@ -683,7 +693,7 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
         .dout(left_audio_filtered), 
         .empty(left_audio_filtered_empty)
     );
-    add add_inst (
+    add_two_inputs add_inst (
         .clock(clock),
         .reset(reset),
         .inA_rd_en(audio_lpr_out_rd_en1),      
@@ -707,7 +717,7 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
     logic deemph_out_left_rd_en;
     logic signed [31:0] deemph_out_left_dout;
     fifo #(
-        .FIFO_BUFFER_SIZE(256),
+        .FIFO_BUFFER_SIZE(16),
         .FIFO_DATA_WIDTH(32)
     ) deemph_out_left_fifo (
         .reset(reset),
@@ -740,7 +750,7 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
     logic right_audio_filtered_rd_en;
     logic signed [31:0] right_audio_filtered_dout;
     fifo #(
-        .FIFO_BUFFER_SIZE(256),
+        .FIFO_BUFFER_SIZE(16),
         .FIFO_DATA_WIDTH(32)
     ) right_audio_filtered_fifo (
         .reset(reset),
@@ -753,7 +763,7 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
         .dout(right_audio_filtered), 
         .empty(right_audio_filtered_empty)
     );
-    sub sub_inst (
+    sub_two_inputs sub_inst (
         .clock(clock),
         .reset(reset),
         .inA_rd_en(audio_lpr_out_rd_en2),      
@@ -790,7 +800,7 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
     );
 
     fifo #(
-        .FIFO_BUFFER_SIZE(256),
+        .FIFO_BUFFER_SIZE(16),
         .FIFO_DATA_WIDTH(32)
     ) deemph_out_right_fifo (
     .reset(reset),
@@ -809,7 +819,7 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
     logic left_audio_out_wr_en;
     logic signed [31:0] left_audio_out_dout;
     fifo #(
-        .FIFO_BUFFER_SIZE(256),
+        .FIFO_BUFFER_SIZE(16),
         .FIFO_DATA_WIDTH(32)
     ) left_audio_out_fifo (
         .reset(reset),
@@ -835,11 +845,10 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
     );
     // Gain on right deemphasized audio
     // 1 int32 -> 1 int32
-    logic right_audio_out_empty;
     logic right_audio_out_wr_en;
     logic signed [31:0] right_audio_out_dout;
     fifo #(
-        .FIFO_BUFFER_SIZE(256),
+        .FIFO_BUFFER_SIZE(16),
         .FIFO_DATA_WIDTH(32)
     ) right_audio_out_fifo (
         .reset(reset),
@@ -864,3 +873,4 @@ parameter logic signed [0:31] [DATA_WIDTH-1:0] HP_COEFFS = '{
         .out_din(right_audio_out_dout)
     );
 endmodule;
+`endif

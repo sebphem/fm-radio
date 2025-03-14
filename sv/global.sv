@@ -1,24 +1,26 @@
+`ifndef _GLOBALS_
+`define _GLOBALS_
+
 package GLOBALS;
     localparam BITS = 10;
     localparam QUANT_VAL = (1 << BITS);
-    function int QUANTIZE_I(int i);
-        return i * QUANT_VAL;
+    localparam DATA_WIDTH = 32;
+    function logic signed [DATA_WIDTH-1:0] DEQUANTIZE_I(logic signed [DATA_WIDTH-1:0] i);
+        if (i < 0) 
+            DEQUANTIZE_I = DATA_WIDTH'(-(-i >>> BITS));
+        else 
+            DEQUANTIZE_I = DATA_WIDTH'(i >>> BITS);
     endfunction
-    function int DEQUANTIZE_I(int i);
-        return i / QUANT_VAL;
-    endfunction
-    function automatic int QUANTIZE_F(input real f);
-        return int'(f * QUANT_VAL);
-    endfunction
-    function automatic real DEQUANTIZE_F(input int i);
-        return real'(i) / real'(QUANT_VAL);
+
+    function logic signed [DATA_WIDTH-1:0] QUANTIZE_I(logic signed [DATA_WIDTH-1:0] i);
+        QUANTIZE_I = DATA_WIDTH'(i << BITS);
     endfunction
     localparam PI_REAL = 3.1415926535897932384626433832795;
-    localparam PI = QUANTIZE_F(PI_REAL);
-    localparam VOLUME_LEVEL = QUANTIZE_F(1.0);
-    localparam ADUIO_DECIM = 8;
+    localparam PI = 1610612736;
+    localparam VOLUME_LEVEL = 1024;
+    localparam AUDIO_DECIM = 8;
     localparam SAMPLES = 65536*4;
-    localparam AUDIO_SAMPLES = SAMPLES/ADUIO_DECIM;
+    localparam AUDIO_SAMPLES = SAMPLES/AUDIO_DECIM;
     localparam MAX_TAPS = 32;
     localparam IIR_COEFF_TAPS = 2;
     localparam IIR_COEFF_TAP_BITS = 1;
@@ -29,3 +31,4 @@ package GLOBALS;
     localparam QUAD_RATE = 256000;
     localparam FM_DEMOD_GAIN = 758;
 endpackage
+`endif

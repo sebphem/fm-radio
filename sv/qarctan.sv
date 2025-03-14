@@ -1,3 +1,7 @@
+`ifndef _QARC_
+`define _QARC_
+
+`include "global.sv"
 /*
 int qarctan(int y, int x)
 {
@@ -62,6 +66,7 @@ module qarctan_two_inputs (
          multiply   <= multiply_c;
       end
    end
+   assign abs_y = ((inA_dout < 0) ? -inA_dout : inA_dout) + 1;
    always_comb begin
       inA_rd_en  = 1'b0;
       inB_rd_en  = 1'b0;
@@ -71,7 +76,6 @@ module qarctan_two_inputs (
       state_c = state;
       multiply_c   = multiply;
       
-      assign abs_y = ((inA_dout < 0) ? -inA_dout : inA_dout) + 1;
       r = 0;
       angle = 0;
 
@@ -108,3 +112,4 @@ module qarctan_two_inputs (
       endcase
    end
 endmodule
+`endif

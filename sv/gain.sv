@@ -1,3 +1,6 @@
+`ifndef _GAIN_
+`define _GAIN_
+`include "global.sv"
 module gain_one_input (
     input  logic         clock,
     input  logic         reset,
@@ -58,3 +61,4 @@ module gain_one_input (
       endcase
    end
 endmodule
+`endif

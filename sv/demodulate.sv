@@ -1,3 +1,8 @@
+`ifndef _DEMODULATE_
+`define _DEMODULATE_
+`include "global.sv"
+`include "fifo.sv"
+`include "qarctan.sv"
 // Module 1:
 // state 0 => waiting for input / if get input write
 //        int r = DEQUANTIZE(*real_prev * real) - DEQUANTIZE(-*imag_prev * imag);
@@ -41,7 +46,7 @@ module demodulate_two_inputs (
    logic signed [31:0] stage_1_out_dout2;
 
    fifo #(
-           .FIFO_BUFFER_SIZE(256),
+           .FIFO_BUFFER_SIZE(16),
            .FIFO_DATA_WIDTH(32)
    ) stage_1_out_fifo1 (
        .reset(reset),
@@ -56,7 +61,7 @@ module demodulate_two_inputs (
    );
 
    fifo #(
-           .FIFO_BUFFER_SIZE(256),
+           .FIFO_BUFFER_SIZE(16),
            .FIFO_DATA_WIDTH(32)
    ) stage_1_out_fifo2 (
        .reset(reset),
@@ -95,7 +100,7 @@ module demodulate_two_inputs (
    logic signed [31:0] qarctan_out_dout;
 
    fifo #(
-           .FIFO_BUFFER_SIZE(256),
+           .FIFO_BUFFER_SIZE(16),
            .FIFO_DATA_WIDTH(32)
    ) qarctan_out_fifo (
        .reset(reset),
@@ -289,3 +294,5 @@ module demodulate_stage_2 (
       endcase
    end
 endmodule
+
+`endif

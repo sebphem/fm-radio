@@ -1,3 +1,6 @@
+`ifndef _ADD_
+`define _ADD_
+`include "global.sv"
 module add_two_inputs (
     input  logic         clock,
     input  logic         reset,
@@ -66,3 +69,4 @@ module add_two_inputs (
       endcase
    end
 endmodule
+`endif

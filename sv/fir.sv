@@ -1,3 +1,6 @@
+`ifndef _FIR_
+`define _FIR_
+`include "global.sv"
 module fir #(
     parameter int DECIMATION = 2,     // Decimation factor
     parameter int TAPS = 32,
@@ -126,3 +129,5 @@ module fir #(
     end
 
 endmodule
+
+`endif
