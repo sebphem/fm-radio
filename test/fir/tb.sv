@@ -7,7 +7,7 @@ localparam string CMP_IN   = "../cmp.txt";
 localparam string OUT_NAME = "../out.txt";
 
 localparam CLOCK_PERIOD = 10;
-localparam DECIMATION = 2;
+localparam DECIMATION = 8;
 localparam TAPS = 32;
 localparam DATA_WIDTH = 32;
 
@@ -34,11 +34,11 @@ logic in_write_done = '0;
 logic out_read_done = '0;
 integer out_errors = '0;
 
-logic signed [0:TAPS][DATA_WIDTH-1:0] coeff = '{
-    32'hFFFFFFFD, 32'hFFFFFFFA, 32'hFFFFFF4, 32'hFFFFFFED, 32'hFFFFFFE5, 32'hFFFFFFDF, 32'hFFFFFFE2, 32'hFFFFFF93,
+parameter logic signed [0:TAPS-1][DATA_WIDTH-1:0] coeff = '{
+    32'hFFFFFFFD, 32'hFFFFFFFA, 32'hFFFFFFF4, 32'hFFFFFFED, 32'hFFFFFFE5, 32'hFFFFFFDF, 32'hFFFFFFE2, 32'hFFFFFFF3,
     32'h00000015, 32'h0000004E, 32'h0000009B, 32'h000000F9, 32'h0000015D, 32'h000001BE, 32'h0000020E, 32'h00000243,
     32'h00000243, 32'h0000020E, 32'h000001BE, 32'h0000015D, 32'h000000F9, 32'h0000009B, 32'h0000004E, 32'h00000015,
-    32'hFFFFFF93, 32'hFFFFFFE2, 32'hFFFFFFDF, 32'hFFFFFFE5, 32'hFFFFFFED, 32'hFFFFFF4, 32'hFFFFFFFA, 32'hFFFFFFFD
+    32'hFFFFFFF3, 32'hFFFFFFE2, 32'hFFFFFFDF, 32'hFFFFFFE5, 32'hFFFFFFED, 32'hFFFFFFF4, 32'hFFFFFFFA, 32'hFFFFFFFD
 };
 
 fifo #(
@@ -63,11 +63,10 @@ fir #(
     .DATA_WIDTH(DATA_WIDTH)
 ) fir_inst (
     .clk(clock),
-    .rst_n(~reset),
+    .rst(reset),
     .x_in_rd_en(x_in_rd_en),
     .x_in_empty(x_in_empty),
     .x_in(x_in_dout),
-    .valid_out(), // not used in this testbench
     .y_out(y_out),
     .y_out_wr_en(y_out_wr_en),
     .y_out_full(y_out_full)
@@ -104,7 +103,7 @@ end
 
 always begin
     @(posedge clock);
-    #100000;
+    #1000000;
     @(posedge clock);
     $finish;
 end
@@ -141,13 +140,12 @@ initial begin : write_fir_data
     end
 
     while (!$feof(x_file)) begin
-        r = $fscanf(x_file, "%d\n", x_in);
-        while (x_in_full) begin
-            @(posedge clock);
-        end
-        x_in_wr_en = 1'b1;
-        @(posedge clock);
+        @(negedge clock);
         x_in_wr_en = 1'b0;
+        if(!x_in_full) begin
+            r = $fscanf(x_file, "%d\n", x_in);
+            x_in_wr_en = 1'b1;
+        end
     end
     
     @(negedge clock);
