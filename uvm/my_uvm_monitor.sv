@@ -37,22 +37,25 @@ class my_uvm_monitor_output extends uvm_monitor;
 
         tx_out = output_uvm_transaction::type_id::create(.name("tx_out"), .contxt(get_full_name()));
 
-        vif.out_rd_en = 1'b0;
+        vif.right_audio_out_rd_en = 1'b0;
+        vif.left_audio_out_rd_en = 1'b0;
 
         forever begin
             @(negedge vif.clock)
             begin
-                if ((vif.out_empty_right == 1'b0) && (vif.out_empty_left == 1'b0)) begin
-                    $fwrite(r_audio_out_file, "%c", vif.radio_out_right);
-                    tx_out.l_out = vif.radio_out_right;
+                if ((vif.right_audio_out_empty == 1'b0) && (vif.left_audio_out_empty == 1'b0)) begin
+                    $fwrite(r_audio_out_file, "%c", vif.left_audio_out);
+                    tx_out.l_out = vif.left_audio_out;
 
-                    $fwrite(l_audio_out_file, "%c", vif.radio_out_left);
-                    tx_out.r_out = vif.radio_out_left;
+                    $fwrite(l_audio_out_file, "%c", vif.right_audio_out);
+                    tx_out.r_out = vif.right_audio_out;
 
                     mon_ap_output.write(tx_out);
-                    vif.out_rd_en = 1'b1;
+                    vif.right_audio_out_rd_en = 1'b1;
+                    vif.left_audio_out_rd_en = 1'b1;
                 end else begin
-                    vif.out_rd_en = 1'b0;
+                    vif.right_audio_out_rd_en = 1'b0;
+                    vif.left_audio_out_rd_en = 1'b0;
                 end
             end
         end
@@ -120,7 +123,7 @@ class my_uvm_monitor_compare extends uvm_monitor;
                     //rev endianness for bin
                     // tx.l_out = '{d_l[7:0],d_l[15:8],d_l[23:16],d_l[31:24]};
                     //keep endianness for other files
-                    tx.l_out = d_l;
+                    tx_cmp.l_out = d_l;
 
                     //read from right compare
                     n_bytes = $fread(d_r, r_cmp_file, i, BYTES_PER_ELEMENT);
@@ -128,12 +131,13 @@ class my_uvm_monitor_compare extends uvm_monitor;
                     //rev endianness for bin
                     // tx.r_out = '{d_r[7:0],d_r[15:8],d_r[23:16],d_r[31:24]};
                     //keep endianness for other files
-                    tx.r_out = d_r;
+                    tx_cmp.r_out = d_r;
                     mon_ap_compare.write(tx_cmp);
                     i+= BYTES_PER_ELEMENT;
                 end
             end
-        end        
+        end
+        `uvm_info("MON_CMP_FINAL", $sformatf("Done writing file to buffer"), UVM_LOW);
 
         // notify that run_phase has completed
         phase.drop_objection(.obj(this));

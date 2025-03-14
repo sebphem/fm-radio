@@ -33,7 +33,7 @@ class my_uvm_driver extends uvm_driver#(input_uvm_transaction);
         forever begin
             @(negedge vif.clock)
             begin
-                if (vif.in_full == 1'b0) begin
+                if (vif.iq_sample_full == 1'b0) begin
                     seq_item_port.get_next_item(tx);
                     vif.iq_sample = tx.iq;
                     vif.iq_sample_wr_en = 1'b1;

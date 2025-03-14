@@ -58,7 +58,7 @@ class my_uvm_sequence extends uvm_sequence#(input_uvm_transaction);
             //rev endianness
             // tx.iq = '{d_in[7:0],d_in[15:8],d_in[23:16],d_in[31:24]};
             tx.iq = d_in;
-            `uvm_info("SEQ_RUN", tx.sprint(), UVM_LOW);
+            // `uvm_info("SEQ_RUN", tx.sprint(), UVM_LOW);
             finish_item(tx);
             i += BYTES_PER_ELEMENT;
         end

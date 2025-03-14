@@ -1,0 +1,533 @@
+m255
+K4
+z2
+!s11f vlog 2019.3_2 2019.09, Sep 24 2019
+13
+!s112 1.1
+!i10d 8192
+!i10e 25
+!i10f 100
+cModel Technology
+Z0 d/home/swp8132/fm-radio/test/fmradio_uvm
+T_opt
+Z1 !s110 1741980340
+VN16J>abHEmCRPlh5C9aX?0
+04 8 4 work fm_radio fast 0
+=1-000ae431a4f1-67d482b4-c065d-3fcacf
+o-quiet -auto_acc_if_foreign -work work -L work +acc
+Z2 tCvgOpt 0
+n@_opt
+OE;O;2019.3_2;69
+vadd_two_inputs
+Z3 !s105 fm_radio_sv_unit
+Z4 DXx4 work 16 fm_radio_sv_unit 0 22 7?`cjPS8mz;^PbP2iV3`33
+Z5 DXx6 sv_std 3 std 0 22 9oUSJO;AeEaW`l:M@^WG92
+R1
+!i10b 1
+!s100 b`3L[z1F[FgD26^D]?d>63
+!s11b :aA6U99?gSlC;WUdA?1Ec1
+IiZ4eh^70_VlmSAdKIa`UP3
+Z6 VDg1SIo80bB@j0V0VzS_@n1
+S1
+R0
+Z7 w1741973739
+8../../sv/add.sv
+Z8 F../../sv/add.sv
+!i122 -1
+L0 4
+Z9 OE;L;2019.3_2;69
+r1
+!s85 0
+31
+Z10 !s108 1741980340.000000
+Z11 !s107 ../../sv/iir.sv|../../sv/gain.sv|../../sv/readIQ.sv|../../sv/fir_cmplx.sv|../../sv/fir.sv|../../sv/demodulate.sv|../../sv/divide.sv|../../sv/fifo.sv|../../sv/qarctan.sv|../../sv/multiply.sv|../../sv/sub.sv|../../sv/add.sv|../../sv/global.sv|../../sv/fm_radio.sv|
+Z12 !s90 -reportprogress|300|-work|work|../../sv/fm_radio.sv|
+!i113 0
+Z13 o-work work -L mtiAvm -L mtiRnm -L mtiOvm -L mtiUvm -L mtiUPF -L infact
+R2
+vdemodulate_stage_1
+R3
+R4
+R5
+Z14 DXx4 work 7 GLOBALS 0 22 eODF0E@P3DMbf4hQ0i^fX1
+R1
+!i10b 1
+!s100 AOn[DeSo1a>cEL5;`FJbP3
+!s11b lU:DK0bzEYo5DhaJShbN22
+IMCPcM?I^;JPU1c2l]KmlO3
+R6
+S1
+R0
+R7
+Z15 8../../sv/demodulate.sv
+Z16 F../../sv/demodulate.sv
+!i122 -1
+L0 143
+R9
+r1
+!s85 0
+31
+R10
+R11
+R12
+!i113 0
+R13
+R2
+vdemodulate_stage_2
+R3
+R4
+R5
+R14
+R1
+!i10b 1
+!s100 0]94l=JF:<Ao@SM`ZhD290
+!s11b Tl1Uj7GiSoNP@GEBnlEmh2
+IDSRgJXD8nQl^33;;QAk9H1
+R6
+S1
+R0
+R7
+R15
+R16
+!i122 -1
+L0 303
+R9
+r1
+!s85 0
+31
+R10
+R11
+R12
+!i113 0
+R13
+R2
+vdemodulate_two_inputs
+R3
+R4
+R5
+R1
+!i10b 1
+!s100 D9i=W4ndTDo;WH=JoZUL20
+!s11b GXgk9Q5fU_^KW5iaIeE_^0
+I4Ke;SRL6??S=TiG1>KVcT0
+R6
+S1
+R0
+R7
+R15
+R16
+!i122 -1
+L0 19
+R9
+r1
+!s85 0
+31
+R10
+R11
+R12
+!i113 0
+R13
+R2
+vdivide_two_inputs
+R5
+R1
+!i10b 1
+!s100 _3484V^kQC[iL3IgEY6Dd1
+!s11b lDL7jh@o`6^4nPLnhG=dL1
+IIDgZ3Ubn_fG?j>8JKW;h51
+R6
+S1
+R0
+R7
+8../../sv/divide.sv
+Z17 F../../sv/divide.sv
+!i122 -1
+L0 6
+R9
+r1
+!s85 0
+31
+R10
+Z18 !s107 ../../sv/divide.sv|../../sv/fifo.sv|../../sv/global.sv|../../sv/qarctan.sv|
+Z19 !s90 -reportprogress|300|-work|work|../../sv/qarctan.sv|
+!i113 0
+R13
+R2
+vfifo
+R5
+R1
+!i10b 1
+!s100 Q[IH9NU[GDGUTk4z2`^cf0
+!s11b _kP]^9cFJ5[i@4IC9XR9i2
+I7GOJ_NXVNR0mXRFn1f0D82
+R6
+S1
+R0
+R7
+8../../sv/fifo.sv
+Z20 F../../sv/fifo.sv
+!i122 -1
+L0 4
+R9
+r1
+!s85 0
+31
+R10
+R18
+R19
+!i113 0
+R13
+R2
+vfir
+R3
+R4
+R5
+R14
+R1
+!i10b 1
+!s100 ]Qe8jihOX0AaVR7mjUZma1
+!s11b I@XdbnJ]cTZa2TYdZYZlj0
+I]hiI^BW6E19Me;Q<?^:oX1
+R6
+S1
+R0
+R7
+8../../sv/fir.sv
+Z21 F../../sv/fir.sv
+!i122 -1
+L0 5
+R9
+r1
+!s85 0
+31
+R10
+R11
+R12
+!i113 0
+R13
+R2
+vfir_cmplx
+R3
+R4
+R5
+R14
+R1
+!i10b 1
+!s100 PE_AdFIeQQc_a7GG=C>`?1
+!s11b EOAgSb[XH2=O3SZ9n3f]h3
+I<mKc3:;bIAljZ9WUK^>T?1
+R6
+S1
+R0
+R7
+8../../sv/fir_cmplx.sv
+Z22 F../../sv/fir_cmplx.sv
+!i122 -1
+L0 5
+R9
+r1
+!s85 0
+31
+R10
+R11
+R12
+!i113 0
+R13
+R2
+vfm_radio
+R3
+R4
+R5
+R1
+!i10b 1
+!s100 =PBQXTGaZ6]YHQH1R3Zk13
+!s11b g6JEDzQjXPH4>giZ8Um0U1
+I7jf]iBdZFSSAHFA81jg6E0
+R6
+S1
+R0
+R7
+Z23 8../../sv/fm_radio.sv
+Z24 F../../sv/fm_radio.sv
+!i122 -1
+L0 16
+R9
+r1
+!s85 0
+31
+R10
+R11
+R12
+!i113 0
+R13
+R2
+Xfm_radio_sv_unit
+R5
+R1
+V7?`cjPS8mz;^PbP2iV3`33
+r1
+!s85 0
+!i10b 1
+!s100 Pj<=1``TN`_T1@H=kRP3C2
+I7?`cjPS8mz;^PbP2iV3`33
+!i103 1
+S1
+R0
+R7
+R23
+R24
+Z25 F../../sv/global.sv
+R8
+Z26 F../../sv/sub.sv
+Z27 F../../sv/multiply.sv
+Z28 F../../sv/qarctan.sv
+R20
+R17
+R16
+R21
+R22
+Z29 F../../sv/readIQ.sv
+Z30 F../../sv/gain.sv
+Z31 F../../sv/iir.sv
+!i122 -1
+L0 875
+R9
+31
+R10
+R11
+R12
+!i113 0
+R13
+R2
+vgain_one_input
+R5
+R14
+R1
+!i10b 1
+!s100 :OmE``G80EITzY0Xk=I5O1
+!s11b mfd:9gebL4>FZFQNE:U>O2
+IZEP:3?TW:?z4V=M9ITjKC0
+R6
+S1
+R0
+R7
+8../../sv/gain.sv
+R30
+!i122 -1
+L0 4
+R9
+r1
+!s85 0
+31
+R10
+!s107 ../../sv/global.sv|../../sv/gain.sv|
+!s90 -reportprogress|300|-work|work|../../sv/gain.sv|
+!i113 0
+R13
+R2
+XGLOBALS
+R5
+R1
+!i10b 1
+!s100 jEZd?RjBa6]^aJZMIMni11
+!s11b Gf;KBmV;<TMm<?NVT7HE>0
+IeODF0E@P3DMbf4hQ0i^fX1
+VeODF0E@P3DMbf4hQ0i^fX1
+S1
+R0
+R7
+8../../sv/global.sv
+R25
+!i122 -1
+L0 4
+R9
+r1
+!s85 0
+31
+R10
+Z32 !s107 ../../sv/global.sv|../../sv/sub.sv|
+Z33 !s90 -reportprogress|300|-work|work|../../sv/sub.sv|
+!i113 0
+R13
+R2
+n@g@l@o@b@a@l@s
+viir
+R5
+R14
+R1
+!i10b 1
+!s100 HbU=kIcbSEX_W_V?F;Phm0
+!s11b MFM<GcG2FcdCDG6k5Lz[E0
+In1k_ODd@23KSC@<XC;RiS2
+R6
+S1
+R0
+R7
+8../../sv/iir.sv
+R31
+!i122 -1
+L0 5
+R9
+r1
+!s85 0
+31
+R10
+!s107 ../../sv/global.sv|../../sv/iir.sv|
+!s90 -reportprogress|300|-work|work|../../sv/iir.sv|
+!i113 0
+R13
+R2
+vmultiply_two_inputs
+R5
+R14
+R1
+!i10b 1
+!s100 J3XnbBXWKmk19:=`obflW2
+!s11b j[HNDJQe;a]33kcE<:hbO0
+I?k2L]<UVzaZZfncn[=5Y23
+R6
+S1
+R0
+R7
+8../../sv/multiply.sv
+R27
+!i122 -1
+L0 4
+R9
+r1
+!s85 0
+31
+R10
+!s107 ../../sv/global.sv|../../sv/multiply.sv|
+!s90 -reportprogress|300|-work|work|../../sv/multiply.sv|
+!i113 0
+R13
+R2
+vqarctan_stage_1
+R5
+R14
+R1
+!i10b 1
+!s100 ]dgBgN95kM6Ebhkb6702a1
+!s11b NCPl?77ZI:6lZ5Ezlh>dW3
+IEVk::C]3>`B^:3fKV8=S62
+R6
+S1
+R0
+R7
+Z34 8../../sv/qarctan.sv
+R28
+!i122 -1
+L0 211
+R9
+r1
+!s85 0
+31
+R10
+R18
+R19
+!i113 0
+R13
+R2
+vqarctan_stage_3
+R5
+R14
+R1
+!i10b 1
+!s100 @o@G=eikI:<CU@0Va?YmA0
+!s11b 4YMb@OUP^b7m<95e4?VzQ3
+I2EDFFBL;;Ic<mn845V3=g1
+R6
+S1
+R0
+R7
+R34
+R28
+!i122 -1
+L0 333
+R9
+r1
+!s85 0
+31
+R10
+R18
+R19
+!i113 0
+R13
+R2
+vqarctan_two_inputs
+R5
+R1
+!i10b 1
+!s100 jka7ZPdTiIHBO5VIBW_iM3
+!s11b iUG;KbRgDczmLoGjA?mhW1
+IQl^06nX??0z;b^T2CmN9W1
+R6
+S1
+R0
+R7
+R34
+R28
+!i122 -1
+L0 31
+R9
+r1
+!s85 0
+31
+R10
+R18
+R19
+!i113 0
+R13
+R2
+vread_iq
+R5
+R14
+R1
+!i10b 1
+!s100 0BXNk[H7ogEb6liVANlI_3
+!s11b >Sfg8RDG86eeEDFC06z>H1
+Ijd2X[hT3VH]=bW=fYiCOX3
+R6
+S1
+R0
+R7
+8../../sv/readIQ.sv
+R29
+!i122 -1
+L0 4
+R9
+r1
+!s85 0
+31
+R10
+!s107 ../../sv/global.sv|../../sv/readIQ.sv|
+!s90 -reportprogress|300|-work|work|../../sv/readIQ.sv|
+!i113 0
+R13
+R2
+vsub_two_inputs
+R5
+R1
+!i10b 1
+!s100 PJ[[V4]jF?VY`8ZA<a<]e3
+!s11b E6IEnWh;0AHVYiV[5Fl]R0
+IS^>`5ZkVAVRb:21J76=I12
+R6
+S1
+R0
+R7
+8../../sv/sub.sv
+R26
+!i122 -1
+L0 5
+R9
+r1
+!s85 0
+31
+R10
+R32
+R33
+!i113 0
+R13
+R2

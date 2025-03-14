@@ -46,17 +46,17 @@ class my_uvm_scoreboard extends uvm_scoreboard;
     endtask: run
 
     virtual function void comparison();
-
+        `uvm_info("SB_CMP", $sformatf("tx cmp l+r: %d %d tx out L+r: %d, %d", tx_cmp.l_out, tx_cmp.r_out, tx_out.l_out,tx_out.r_out),UVM_LOW);
         if (tx_out.l_out != tx_cmp.l_out) begin
             `uvm_info("SB_CMP", tx_out.sprint(), UVM_LOW);
             `uvm_info("SB_CMP", tx_cmp.sprint(), UVM_LOW);
-            `uvm_error("SB_CMP", $sformatf("Test Failed on Left Audio\nExpecting: %d, Received: %d", tx_cmp.l_out, tx_out.l_out))
+            `uvm_error("SB_CMP", $sformatf("Test Failed on Left Audio\nExpecting: %d, Received: %d", tx_cmp.l_out, tx_out.l_out));
         end
 
         if (tx_out.r_out != tx_cmp.r_out) begin
             `uvm_info("SB_CMP", tx_out.sprint(), UVM_LOW);
             `uvm_info("SB_CMP", tx_cmp.sprint(), UVM_LOW);
-            `uvm_error("SB_CMP", $sformatf("Test Failed on Right Audio\nExpecting: %d, Received: %d", tx_cmp.r_out, tx_out.r_out))
+            `uvm_error("SB_CMP", $sformatf("Test Failed on Right Audio\nExpecting: %d, Received: %d", tx_cmp.r_out, tx_out.r_out));
         end
     endfunction: comparison
 endclass: my_uvm_scoreboard

@@ -6,8 +6,8 @@ class my_uvm_agent extends uvm_agent;
 
     `uvm_component_utils(my_uvm_agent)
 
-    uvm_analysis_port#(my_uvm_transaction) agent_ap_output;
-    uvm_analysis_port#(my_uvm_transaction) agent_ap_compare;
+    uvm_analysis_port#(output_uvm_transaction) agent_ap_output;
+    uvm_analysis_port#(output_uvm_transaction) agent_ap_compare;
 
     my_uvm_sequencer        seqr;
     my_uvm_driver            drvr;

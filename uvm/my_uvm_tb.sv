@@ -10,17 +10,17 @@ module my_uvm_tb;
 my_uvm_if vif();
 
    fm_radio fm_radio_instance (
-    .clock(clock),
-    .reset(reset),
-    .iq_sample_wr_en(iq_sample_wr_en),
-    .iq_sample(iq_sample),
-    .iq_sample_full(iq_sample_full),
-    .left_audio_out_rd_en(left_audio_out_rd_en),
-    .left_audio_out_empty(left_audio_out_empty),
-    .left_audio_out(left_audio_out),
-    .right_audio_out_rd_en(right_audio_out_rd_en),
-    .right_audio_out_empty(right_audio_out_empty),
-    .right_audio_out(right_audio_out)
+    .clock(vif.clock),
+    .reset(vif.reset),
+    .iq_sample_wr_en(vif.iq_sample_wr_en),
+    .iq_sample(vif.iq_sample),
+    .iq_sample_full(vif.iq_sample_full),
+    .left_audio_out_rd_en(vif.left_audio_out_rd_en),
+    .left_audio_out_empty(vif.left_audio_out_empty),
+    .left_audio_out(vif.left_audio_out),
+    .right_audio_out_rd_en(vif.right_audio_out_rd_en),
+    .right_audio_out_empty(vif.right_audio_out_empty),
+    .right_audio_out(vif.right_audio_out)
   );
 
     initial begin
