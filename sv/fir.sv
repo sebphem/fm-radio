@@ -1,7 +1,7 @@
 `ifndef _FIR_
 `define _FIR_
 `include "global.sv"
-(* syn_black_box *)
+
 module fir #(
     parameter int DECIMATION = 2,     // Decimation factor
     parameter int TAPS = 32,
@@ -117,14 +117,14 @@ module fir #(
             OUTPUT_READY: begin
                 if(!y_out_full) begin
                     y_out_wr_en = 1'b1;
-                    y_out = sum_mult_c;
+                    y_out = $signed(sum_mult_c);
                     state_c = LOAD_SHIFT;
                     dec_c = 0;
                 end
             end
-            // default: begin
-            //     state_c = LOAD_SHIFT;
-            // end
+            default: begin
+                y_out = $clog2(x_in);
+            end
         endcase
     end
 

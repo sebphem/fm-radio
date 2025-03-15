@@ -1,7 +1,6 @@
 `ifndef _FIRCMPLX_
 `define _FIRCMPLX_
 `include "global.sv"
-(* syn_black_box *)
 module fir_cmplx #(
     parameter int DECIMATION = 1,     // Decimation factor (always 1 in this case)
     parameter int TAPS = 20,
@@ -105,7 +104,7 @@ module fir_cmplx #(
                     shift_real_reg_c[1:TAPS-1] = shift_real_reg[0:TAPS-2];
                     shift_real_reg_c[0] = x_real_in;
                     shift_imag_reg_c[1:TAPS-1] = shift_imag_reg[0:TAPS-2];
-                    shift_imag_reg_c[0] = x_imag_in;
+                    shift_imag_reg_c[0] = $signed(x_imag_in);
                     sum_real_c = 0;
                     sum_imag_c = 0;
                     state_c = MULT_ACCUM;
@@ -170,6 +169,9 @@ module fir_cmplx #(
                     y_imag_out = sum_imag_c;
                     state_c = LOAD_SHIFT;
                 end
+            end
+            default:  begin
+                 y_imag_out = $clog2(x_in);
             end
         endcase
     end
