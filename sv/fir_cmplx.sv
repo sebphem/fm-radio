@@ -171,7 +171,7 @@ module fir_cmplx #(
                 end
             end
             default:  begin
-                 y_imag_out = $clog2(x_in);
+                 y_imag_out = $clog2(x_real_in);
             end
         endcase
     end
